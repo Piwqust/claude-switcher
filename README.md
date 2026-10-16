@@ -19,7 +19,7 @@
 &nbsp;
 <a href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe"><img src="docs/images/download-arm64.svg" alt="Download for Windows ARM64" height="52"></a>
 
-<sub>One exe, nothing else to install · <a href="https://github.com/Piwqust/claude-switcher/releases">all releases</a> · <a href="docs/guide.md">user guide</a> · <a href="README.ru.md">Русский</a></sub>
+<sub>One exe, nothing else to install · <a href="https://claude-switcher.angleford.co">website</a> · <a href="https://github.com/Piwqust/claude-switcher/releases">all releases</a> · <a href="docs/guide.md">user guide</a> · <a href="README.ru.md">Русский</a></sub>
 
 </div>
 
