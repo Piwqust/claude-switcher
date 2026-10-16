@@ -4,3 +4,7 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    # One pull request a month for every action that has a new version, not one each.
+    groups:
+      github-actions:
+        patterns: ['*']
