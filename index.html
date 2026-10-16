@@ -3,16 +3,168 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Claude Profile Switcher for Windows</title>
-  <meta name="description" content="Run several Claude Desktop accounts on one Windows PC, each in its own window and all signed in at once. Press Ctrl+Alt+C, pick one, and it opens signed in.">
+  <title>Claude Profile Switcher: several Claude Desktop accounts at once on Windows</title>
+  <meta name="description" content="Free Windows app to use multiple Claude Desktop accounts at the same time. Each account opens in its own window, signed in; switch with Ctrl+Alt+C, no signing out. Windows 10 and 11, x64 and ARM64.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="Piwqust">
   <meta name="theme-color" content="#1b1b1b">
-  <meta property="og:title" content="Claude Profile Switcher for Windows">
-  <meta property="og:description" content="Every Claude account on one PC, each in its own window, all signed in at once.">
-  <meta property="og:image" content="https://claude-switcher.angleford.co/img/hero-film.jpg">
-  <meta property="og:url" content="https://claude-switcher.angleford.co/">
-  <meta name="twitter:card" content="summary_large_image">
   <link rel="canonical" href="https://claude-switcher.angleford.co/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Claude Profile Switcher">
+  <meta property="og:title" content="Claude Profile Switcher: every Claude Desktop account at once">
+  <meta property="og:description" content="Run several Claude Desktop accounts on one Windows PC, each in its own window and all signed in. Ctrl+Alt+C to switch.">
+  <meta property="og:url" content="https://claude-switcher.angleford.co/">
+  <meta property="og:image" content="https://claude-switcher.angleford.co/img/hero-film.jpg">
+  <meta property="og:image:width" content="1600">
+  <meta property="og:image:height" content="800">
+  <meta property="og:image:alt" content="The Claude Profile Switcher picker with Main, Work and Personal accounts">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Claude Profile Switcher: every Claude Desktop account at once">
+  <meta name="twitter:description" content="Run several Claude Desktop accounts on one Windows PC, each in its own window and all signed in.">
+  <meta name="twitter:image" content="https://claude-switcher.angleford.co/img/hero-film.jpg">
+  <link rel="alternate" type="text/markdown" href="/llms.txt" title="Claude Profile Switcher for language models">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://claude-switcher.angleford.co/#app",
+      "name": "Claude Profile Switcher",
+      "description": "A free, open-source Windows utility that runs several Claude Desktop accounts on one PC at the same time, each in its own window and signed in. Press Ctrl+Alt+C to pick an account from any app.",
+      "url": "https://claude-switcher.angleford.co/",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Windows 10, Windows 11",
+      "processorRequirements": "x64 or ARM64",
+      "softwareVersion": "1.0.0",
+      "datePublished": "2026-10-16",
+      "fileSize": "550 KB",
+      "downloadUrl": [
+        "https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe",
+        "https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe"
+      ],
+      "installUrl": "https://claude-switcher.angleford.co/#download",
+      "softwareRequirements": "Claude Desktop",
+      "license": "https://github.com/Piwqust/claude-switcher/blob/main/LICENSE",
+      "isAccessibleForFree": true,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "image": "https://claude-switcher.angleford.co/img/logo.png",
+      "screenshot": [
+        "https://claude-switcher.angleford.co/img/themes.png",
+        "https://claude-switcher.angleford.co/img/tray-dark.png"
+      ],
+      "featureList": [
+        "Run several Claude Desktop accounts at once, each in its own window",
+        "Ctrl+Alt+C opens the account picker from any app; Ctrl+Alt+1 to 9 opens an account directly",
+        "5-hour and 7-day usage shown for every account",
+        "Starts with Windows and waits in the tray",
+        "Opens several accounts at once",
+        "No network access; sign-ins, tokens and cookies are never read",
+        "Native C++ exe of about 550 KB for x64 and ARM64"
+      ],
+      "author": {
+        "@type": "Person",
+        "name": "Piwqust",
+        "url": "https://github.com/Piwqust"
+      },
+      "sameAs": [
+        "https://github.com/Piwqust/claude-switcher"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://claude-switcher.angleford.co/#site",
+      "url": "https://claude-switcher.angleford.co/",
+      "name": "Claude Profile Switcher",
+      "inLanguage": "en"
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://claude-switcher.angleford.co/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I use two Claude accounts at the same time on Windows?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Claude Desktop keeps one sign-in at a time. Install Claude Profile Switcher, click Add and sign in with your second account in the Claude window that opens. Both accounts then stay signed in, each in its own window, and Ctrl+Alt+C switches between them from any app."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I switch Claude Desktop accounts without signing out?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Every account keeps its own sign-in, chats and settings, so switching means opening another window rather than signing out and back in. Ctrl+Alt+1 to 9 opens an account directly, and the tray icon lists them all."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does it work on macOS or Linux?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Claude Profile Switcher is a native Windows app for Windows 10 and 11, on x64 and ARM64 PCs."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does it change my main Claude account?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Your main account starts the usual way and keeps auto update and claude:// links. Extra accounts live in their own folders in %LOCALAPPDATA%\\ClaudeProfiles."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What do the accounts share?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Claude Code’s settings, plugins, MCP servers and session history live in your user folder, so every account uses the same set. claude:// links and Claude in Chrome go to the main account, and Claude’s own quick-entry hotkey goes to whichever copy started first."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How much memory does each account use?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Each open account is a full copy of Claude Desktop, so budget roughly one Claude per window. The switcher itself uses about 16 MB."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I update?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run the new version. Your accounts and settings are kept. Claude itself updates once for every account; windows already open stay on the old version until restarted."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "I used Claude Code Desktop Switcher. Will my setup carry over?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. This is a C++ rewrite of the PowerShell script by @PriyanshuGeTRekT that worked out the idea. The profile folders are the same, so accounts, names, colours and shortcuts carry straight over."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is this an official Anthropic app?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. It is an independent open-source project, not affiliated with, endorsed by or supported by Anthropic. Using several accounts is subject to Anthropic’s terms."
+          }
+        }
+      ]
+    }
+  ]
+}
+  </script>
   <link rel="icon" href="img/logo.png">
+  <link rel="apple-touch-icon" href="img/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -422,6 +574,18 @@
     <section class="section faq" id="faq" aria-labelledby="faq-title">
       <div class="head" data-reveal><h2 class="h2" id="faq-title">Questions</h2></div>
       <div class="expanders" data-reveal>
+        <details>
+          <summary>How do I use two Claude accounts at the same time on Windows?</summary>
+          <p>Claude Desktop keeps one sign-in at a time. Install Claude Profile Switcher, click Add and sign in with your second account in the Claude window that opens. Both accounts then stay signed in, each in its own window, and Ctrl+Alt+C switches between them from any app.</p>
+        </details>
+        <details>
+          <summary>Can I switch Claude Desktop accounts without signing out?</summary>
+          <p>Yes. Every account keeps its own sign-in, chats and settings, so switching means opening another window rather than signing out and back in. Ctrl+Alt+1 to 9 opens an account directly, and the tray icon lists them all.</p>
+        </details>
+        <details>
+          <summary>Does it work on macOS or Linux?</summary>
+          <p>No. Claude Profile Switcher is a native Windows app for Windows 10 and 11, on x64 and ARM64 PCs.</p>
+        </details>
         <details>
           <summary>Does it change my main Claude account?</summary>
           <p>No. Your main account starts the usual way and keeps auto update and claude:// links. Extra accounts live in their own folders in <code>%LOCALAPPDATA%\ClaudeProfiles</code>.</p>

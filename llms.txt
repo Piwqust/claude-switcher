@@ -1,0 +1,26 @@
+# Claude Profile Switcher
+
+> A free, open-source Windows app for using several Claude Desktop accounts on one PC at the same time. Each account opens in its own Claude window, already signed in, and Ctrl+Alt+C switches between them from any app. Windows 10 and 11, x64 and ARM64. Unofficial, not affiliated with Anthropic.
+
+Claude Desktop holds one sign-in at a time, so moving between a work and a personal account normally means signing out and back in. Claude Profile Switcher starts each extra account as Claude Desktop with its own data folder (`--user-data-dir` in `%LOCALAPPDATA%\ClaudeProfiles`), so every account keeps its own sign-in, chats and settings and they all run side by side. The main account keeps starting the usual way, with auto update and claude:// links.
+
+Key facts:
+
+- Shortcuts: Ctrl+Alt+C opens the account picker from any app; Ctrl+Alt+1 to 9 opens an account directly; Ctrl+click picks several to open at once.
+- Usage: each account card shows how much of the 5-hour and 7-day limits it has used.
+- Starts with Windows, waits in the tray, can open chosen accounts at sign-in after a countdown.
+- Privacy: no network access at all; never reads tokens, cookies or passwords; does not modify Claude; no admin rights.
+- Size: one native C++ exe of about 550 KB. Window appears in about 75 ms and uses about 16 MB of memory (the PowerShell original took about 10 s and 126 MB).
+- Shared between accounts: Claude Code settings, plugins, MCP servers and history (in the user folder), claude:// links, updates.
+- Install: download the exe and run it; it installs itself. The exe is not code-signed, so SmartScreen may show "Windows protected your PC": More info, then Run anyway.
+- Origin: a C++ rewrite of Claude Code Desktop Switcher by @PriyanshuGeTRekT; existing profiles carry over.
+- License: MIT.
+
+## Links
+
+- [Website](https://claude-switcher.angleford.co/)
+- [Source code on GitHub](https://github.com/Piwqust/claude-switcher)
+- [Download for Windows x64](https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe)
+- [Download for Windows ARM64](https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe)
+- [User guide](https://github.com/Piwqust/claude-switcher/blob/main/docs/guide.md)
+- [How it works](https://github.com/Piwqust/claude-switcher/blob/main/docs/how-it-works.md)
