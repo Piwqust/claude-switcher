@@ -35,7 +35,7 @@
       <a href="#faq">FAQ</a>
     </nav>
     <a class="titlebar__gh" href="https://github.com/Piwqust/claude-switcher" aria-label="Source on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0a8 8 0 0 0-2.5 15.6c.4 0 .5-.2.5-.4v-1.5c-2.2.5-2.7-1-2.7-1-.4-.9-.9-1.2-.9-1.2-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.3 1.9.9 2.3.7.1-.5.3-.9.5-1.1-1.8-.2-3.6-.9-3.6-4 0-.9.3-1.6.8-2.1-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8a7.5 7.5 0 0 1 4 0c1.5-1 2.2-.8 2.2-.8.4 1.1.2 1.9.1 2.1.5.6.8 1.3.8 2.1 0 3.1-1.9 3.7-3.6 3.9.3.3.5.8.5 1.5v2.2c0 .2.1.5.6.4A8 8 0 0 0 8 0"/></svg></a>
-    <a class="btn btn--accent btn--sm" href="#download">Download</a>
+    <a class="btn btn--accent btn--sm" href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe" data-get>Download</a>
   </header>
 
   <main id="main">
@@ -46,7 +46,7 @@
         <h1 id="hero-title" class="hero__title"><span class="w"><span style="--i:0">Choose</span></span> <span class="w"><span style="--i:1">an</span></span> <span class="w"><span style="--i:2">account.</span></span><br><span class="w"><span style="--i:3">Or</span></span> <span class="w"><span style="--i:4">all</span></span> <span class="w"><span style="--i:5">of</span></span> <span class="w"><span style="--i:6">them.</span></span></h1>
         <p class="hero__lead" data-enter="1">Claude Profile Switcher runs each Claude Desktop account in its own window on Windows. Press Ctrl+Alt+C, pick one, and it opens already signed in.</p>
         <div class="hero__actions" data-enter="2">
-          <a class="btn btn--accent" href="#download"><svg class="win" viewBox="-2 -2 20 20" aria-hidden="true"><rect width="7.5" height="7.5"/><rect x="8.5" width="7.5" height="7.5"/><rect y="8.5" width="7.5" height="7.5"/><rect x="8.5" y="8.5" width="7.5" height="7.5"/></svg>Download for Windows</a>
+          <a class="btn btn--accent" href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe" data-get><svg class="win" viewBox="-2 -2 20 20" aria-hidden="true"><rect width="7.5" height="7.5"/><rect x="8.5" width="7.5" height="7.5"/><rect y="8.5" width="7.5" height="7.5"/><rect x="8.5" y="8.5" width="7.5" height="7.5"/></svg>Download for Windows</a>
           <a class="btn btn--standard" href="#how">How it works</a>
         </div>
         <p class="caption" data-enter="3">Free and open source <span aria-hidden="true">·</span> Windows 10 and 11 <span aria-hidden="true">·</span> x64 and ARM64 <span aria-hidden="true">·</span> 550 KB</p>
@@ -458,7 +458,7 @@
         <p class="about__name">Claude Profile Switcher</p>
         <p class="about__ver">Version 1.0.0 <span aria-hidden="true">·</span> MIT licence <span aria-hidden="true">·</span> © 2026 Piwqust</p>
       </div>
-      <a class="btn btn--accent btn--sm about__dl" href="#download">Download</a>
+      <a class="btn btn--accent btn--sm about__dl" href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe" data-get>Download</a>
     </div>
     <div class="about__links">
       <div><p class="about__h">Download</p><a href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe">Windows x64</a><a href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe">Windows ARM64</a><a href="https://github.com/Piwqust/claude-switcher/releases">All releases</a><a href="https://github.com/Piwqust/claude-switcher/blob/main/CHANGELOG.md">Changelog</a></div>
@@ -468,6 +468,38 @@
     </div>
     <p class="about__legal">Unofficial: not affiliated with, endorsed by or supported by Anthropic. Claude is a trademark of Anthropic.</p>
   </footer>
+
+
+  <!-- Download: which build, when the browser can't tell -->
+  <dialog class="getdlg" id="get-dialog" aria-labelledby="get-title" aria-describedby="get-desc">
+    <form method="dialog" class="getdlg__box" tabindex="-1" autofocus>
+      <div class="getdlg__body">
+        <div class="getdlg__head">
+          <img src="img/logo.png" width="36" height="36" alt="">
+          <div><h2 id="get-title">Download Claude Profile Switcher</h2><p id="get-desc">Which processor does your PC have?</p></div>
+        </div>
+        <div class="getdlg__opts">
+          <a class="getdlg__opt" data-get-arch="x64" href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe"><b>x64</b><span>Intel and AMD, almost every PC</span></a>
+          <a class="getdlg__opt" data-get-arch="arm64" href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe"><b>ARM64</b><span>Snapdragon and other ARM PCs</span></a>
+        </div>
+        <p class="getdlg__hint">Not sure? Open Settings → System → About. Under System type, Windows says “x64-based processor” or “ARM-based processor”.</p>
+      </div>
+      <div class="getdlg__foot">
+        <span class="caption">Version 1.0.0 <span aria-hidden="true">·</span> Windows 10 and 11</span>
+        <button class="btn btn--standard" value="cancel">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Download notice -->
+  <div class="toast" role="status" aria-live="polite" data-toast hidden>
+    <i class="toast__ico" aria-hidden="true"></i>
+    <div class="toast__text">
+      <p class="toast__t">Downloading the <b data-toast-arch>x64</b> build</p>
+      <p class="toast__s"><span data-toast-why>Picked for your PC.</span> <a href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe" data-toast-other>Need ARM64 instead?</a> On the first run Windows may warn: click More info, then Run anyway.</p>
+    </div>
+    <button class="toast__x" type="button" data-toast-close aria-label="Close">✕</button>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>

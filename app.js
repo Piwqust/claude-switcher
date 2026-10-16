@@ -190,12 +190,61 @@
     dl.setAttribute('aria-label', text);
   };
   radios.forEach((r) => r.addEventListener('change', () => setArch(r.value)));
-  // Windows on ARM reports itself through client hints; preselect it when it does
-  if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
-    navigator.userAgentData.getHighEntropyValues(['architecture', 'platform']).then((v) => {
-      if (v.platform === 'Windows' && v.architecture === 'arm') { const r = radios.find((x) => x.value === 'arm64'); r.checked = true; setArch('arm64'); }
-    }).catch(() => {});
+  // ---------- one-click download: the build is picked for this PC, or asked for ----------
+  // Chromium browsers (Edge, Chrome) tell the processor through client hints; Firefox and Safari
+  // don't, and their user agent says "x64" even on ARM, so then the visitor chooses in a dialog.
+  const exe = (arch) => `https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-${arch}.exe`;
+  let detected = null;
+  const hints = navigator.userAgentData && navigator.userAgentData.getHighEntropyValues
+    ? navigator.userAgentData.getHighEntropyValues(['architecture', 'bitness', 'platform']).then((v) => {
+      if (v.platform !== 'Windows') return null;
+      if (v.architecture === 'arm') return 'arm64';
+      if (v.architecture === 'x86' && v.bitness === '64') return 'x64';
+      return null;
+    }).catch(() => null)
+    : Promise.resolve(null);
+  hints.then((arch) => {
+    detected = arch;
+    if (arch === 'arm64') { const r = radios.find((x) => x.value === 'arm64'); r.checked = true; setArch('arm64'); }
+    $$('[data-get]').forEach((b) => { if (arch) b.href = exe(arch); });
+  });
+
+  const dialog = $('#get-dialog');
+  const toast = $('[data-toast]');
+  let toastTimer = 0;
+  const showToast = (arch, why) => {
+    if (!toast) return;
+    const other = arch === 'arm64' ? 'x64' : 'arm64';
+    $('[data-toast-arch]', toast).textContent = arch === 'arm64' ? 'ARM64' : 'x64';
+    $('[data-toast-why]', toast).textContent = why;
+    const o = $('[data-toast-other]', toast);
+    o.href = exe(other);
+    o.textContent = `Need ${other === 'arm64' ? 'ARM64' : 'x64'} instead?`;
+    o.dataset.arch = other;
+    toast.hidden = false;
+    requestAnimationFrame(() => toast.classList.add('is-in'));
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, 12000);
+  };
+  const hideToast = () => { toast.classList.remove('is-in'); setTimeout(() => { if (!toast.classList.contains('is-in')) toast.hidden = true; }, 300); };
+  if (toast) {
+    $('[data-toast-close]', toast).addEventListener('click', hideToast);
+    $('[data-toast-other]', toast).addEventListener('click', (e) => showToast(e.currentTarget.dataset.arch, 'Switched to the other build.'));
   }
+
+  $$('[data-get]').forEach((b) => b.addEventListener('click', (e) => {
+    if (detected) { b.href = exe(detected); showToast(detected, 'Picked for your PC.'); return; } // the link itself downloads
+    if (!dialog || !dialog.showModal) return; // very old browsers: the link downloads x64
+    e.preventDefault();
+    dialog.showModal();
+  }));
+  $$('[data-get-arch]').forEach((a) => a.addEventListener('click', () => {
+    dialog.close();
+    showToast(a.dataset.getArch, 'The build you chose.');
+  }));
+  // a click on the dimmed backdrop closes the dialog
+  dialog && dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+  dl && dl.addEventListener('click', () => showToast(dl.href.includes('arm64') ? 'arm64' : 'x64', 'The build you chose.'));
 
   // ---------- the title bar: a marker slides to the hovered link and rests on the section in view ----------
   const pivot = $('.pivot');
