@@ -1,0 +1,119 @@
+name: release
+
+# Push a tag like v1.0.0. The release notes come from that version's section in CHANGELOG.md.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to (re)build, e.g. v1.0.0'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build ${{ matrix.arch }}
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [x64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch == 'arm64' && 'amd64_arm64' || 'amd64' }}
+
+      - name: Build
+        shell: cmd
+        run: build.cmd ${{ matrix.arch }} dist\ClaudeProfileSwitcher-${{ matrix.arch }}.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exe-${{ matrix.arch }}
+          path: dist/ClaudeProfileSwitcher-${{ matrix.arch }}.exe
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Package and write release notes
+        id: notes
+        shell: pwsh
+        run: |
+          $tag = '${{ inputs.tag || github.ref_name }}'
+          $version = $tag.TrimStart('v')
+          Set-Location dist
+
+          # One zip with both builds and the docs, for people who prefer an archive.
+          $pkg = New-Item -ItemType Directory "ClaudeProfileSwitcher-$version"
+          Copy-Item ClaudeProfileSwitcher-x64.exe, ClaudeProfileSwitcher-arm64.exe $pkg
+          Copy-Item ../LICENSE, ../README.md, ../README.ru.md, ../CHANGELOG.md $pkg
+          Compress-Archive -Path "$pkg/*" -DestinationPath "ClaudeProfileSwitcher-$version-windows.zip"
+
+          $files = 'ClaudeProfileSwitcher-x64.exe', 'ClaudeProfileSwitcher-arm64.exe', "ClaudeProfileSwitcher-$version-windows.zip"
+          $sums = foreach ($f in $files) { "{0}  {1}" -f (Get-FileHash $f -Algorithm SHA256).Hash.ToLower(), $f }
+          $sums | Set-Content SHA256SUMS.txt -Encoding ascii
+
+          # This version's section of the changelog.
+          $log = Get-Content ../CHANGELOG.md -Raw -Encoding utf8
+          $m = [regex]::Match($log, "(?ms)^## \[$([regex]::Escape($version))\][^\n]*\n(.*?)(?=^## \[|^\[[^\]]+\]: |\z)")
+          $changes = if ($m.Success) { $m.Groups[1].Value.Trim() } else { "See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/$tag/CHANGELOG.md)." }
+          $kb = { param($f) [math]::Round((Get-Item $f).Length / 1KB) }
+          $base = "https://github.com/${{ github.repository }}/releases/download/$tag"
+
+          @"
+          <p align="center"><img src="https://raw.githubusercontent.com/${{ github.repository }}/$tag/docs/images/hero-dark.png" alt="Claude Profile Switcher $version" width="100%"></p>
+
+          ## Download
+
+          | Processor | File | Size |
+          | --- | --- | --- |
+          | **Intel or AMD** (almost every PC) | [ClaudeProfileSwitcher-x64.exe]($base/ClaudeProfileSwitcher-x64.exe) | $(& $kb ClaudeProfileSwitcher-x64.exe) KB |
+          | **ARM** (Snapdragon, Surface Pro X) | [ClaudeProfileSwitcher-arm64.exe]($base/ClaudeProfileSwitcher-arm64.exe) | $(& $kb ClaudeProfileSwitcher-arm64.exe) KB |
+          | Both builds and the docs | [ClaudeProfileSwitcher-$version-windows.zip]($base/ClaudeProfileSwitcher-$version-windows.zip) | $(& $kb "ClaudeProfileSwitcher-$version-windows.zip") KB |
+
+          Download the exe and run it: it installs itself, no admin rights needed. If Windows says "Windows protected your PC", click **More info → Run anyway**: the file is not code-signed. You need [Claude Desktop](https://claude.ai/download) installed. The interface is in English, or in Russian when Windows is.
+
+          ## What's new
+
+          $changes
+
+          ## SHA-256 checksums
+
+          ``````
+          $($sums -join "`n")
+          ``````
+
+          <sub>Built by GitHub Actions from commit ${{ github.sha }}. · [README на русском](https://github.com/${{ github.repository }}/blob/$tag/README.ru.md)</sub>
+          "@ -replace '(?m)^          ', '' | Set-Content release-notes.md -Encoding utf8
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.notes.outputs.tag }}
+          name: Claude Profile Switcher ${{ steps.notes.outputs.version }}
+          body_path: dist/release-notes.md
+          files: |
+            dist/ClaudeProfileSwitcher-x64.exe
+            dist/ClaudeProfileSwitcher-arm64.exe
+            dist/ClaudeProfileSwitcher-${{ steps.notes.outputs.version }}-windows.zip
+            dist/SHA256SUMS.txt
+          make_latest: true

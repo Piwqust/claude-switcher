@@ -1,0 +1,19 @@
+* text=auto
+
+# Windows tools read these; keep CRLF in the working tree.
+*.cmd   text eol=crlf
+*.bat   text eol=crlf
+*.ps1   text eol=crlf
+*.rc    text eol=crlf
+
+*.cpp   text
+*.h     text
+*.inc   text linguist-language=C++
+*.md    text
+*.yml   text
+
+*.ico   binary
+*.png   binary
+*.exe   binary
+
+tools/compose.html linguist-vendored

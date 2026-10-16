@@ -1,0 +1,65 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**']
+  pull_request:
+    paths-ignore: ['**.md', 'docs/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.arch }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch == 'arm64' && 'amd64_arm64' || 'amd64' }}
+
+      - name: Build
+        shell: cmd
+        run: build.cmd ${{ matrix.arch }}
+
+      - name: Check size
+        shell: pwsh
+        run: |
+          $exe = Get-Item "build/${{ matrix.arch }}/ClaudeProfileSwitcher.exe"
+          $kb = [math]::Round($exe.Length / 1KB)
+          "ClaudeProfileSwitcher.exe (${{ matrix.arch }}): $kb KB" >> $env:GITHUB_STEP_SUMMARY
+          if ($exe.Length -gt 1MB) { throw "The exe grew past 1 MB ($kb KB)." }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ClaudeProfileSwitcher-${{ matrix.arch }}
+          path: build/${{ matrix.arch }}/ClaudeProfileSwitcher.exe
+          if-no-files-found: error
+
+  scripts:
+    name: PowerShell scripts
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse and lint
+        shell: powershell
+        run: |
+          $failed = $false
+          foreach ($f in Get-ChildItem tools -Filter *.ps1) {
+            $bytes = [IO.File]::ReadAllBytes($f.FullName)
+            if (-not ($bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF)) {
+              "::error file=tools/$($f.Name)::Save as UTF-8 with BOM, Windows PowerShell 5.1 misreads it otherwise"; $failed = $true
+            }
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($f.FullName, [ref]$null, [ref]$errors)
+            foreach ($e in $errors) { "::error file=tools/$($f.Name),line=$($e.Extent.StartLineNumber)::$($e.Message)"; $failed = $true }
+          }
+          if ($failed) { exit 1 }

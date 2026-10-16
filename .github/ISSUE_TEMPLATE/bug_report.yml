@@ -1,0 +1,72 @@
+name: Bug report
+description: Something does not work the way it should
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please do not attach profile folders or `.claude.json`: they contain your accounts' data.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected and what happened instead.
+      placeholder: |
+        1. Opened the picker with Ctrl+Alt+C
+        2. Clicked the "Work" card
+        3. No Claude window appeared
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Switcher version
+      description: Settings → About.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: build
+    attributes:
+      label: Claude build
+      options:
+        - Microsoft Store
+        - Installer from claude.ai
+        - Not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: arch
+    attributes:
+      label: Processor
+      options:
+        - x64 (Intel or AMD)
+        - ARM64
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      description: Press Win+R and run `winver`.
+      placeholder: "Windows 11 24H2, build 26100"
+    validations:
+      required: true
+  - type: dropdown
+    id: language
+    attributes:
+      label: Interface language
+      options:
+        - English
+        - Русский
+  - type: textarea
+    id: log
+    attributes:
+      label: Error log
+      description: The contents of `%LOCALAPPDATA%\ClaudeProfiles\switcher-error.log`, if it exists.
+      render: text
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If the problem is visible, drop in a screenshot of the switcher's window.
