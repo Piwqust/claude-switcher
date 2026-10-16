@@ -43,72 +43,6 @@
   .tray .clock { font-family: "Segoe UI Variable Text", "Segoe UI"; font-size: 12px; line-height: 1.25; text-align: right; }
   .stack { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
 
-  /* ------------------------------------------------ hero: the copy on the left, a small Windows 11 desktop on the right */
-  #hero { width: 1280px; height: 640px; position: relative; overflow: hidden; font-family: "Segoe UI Variable Text", "Segoe UI"; }
-  #hero.dark  { --ink: #fff; --ink2: rgba(255,255,255,.66); --ink3: rgba(255,255,255,.46); --line: rgba(255,255,255,.10); --pill: rgba(255,255,255,.06);
-                background: radial-gradient(900px 640px at 78% 50%, rgba(217,112,76,.22), transparent 60%),
-                            radial-gradient(700px 500px at 0% 100%, rgba(120,90,210,.10), transparent 70%),
-                            #0d0b0c; }
-  #hero.light { --ink: #1d1613; --ink2: rgba(29,22,19,.66); --ink3: rgba(29,22,19,.48); --line: rgba(29,22,19,.10); --pill: rgba(255,255,255,.7);
-                background: radial-gradient(900px 640px at 78% 50%, rgba(217,112,76,.20), transparent 60%),
-                            radial-gradient(700px 500px at 0% 100%, rgba(140,110,220,.10), transparent 70%),
-                            #f8f4f1; }
-  #hero .grain { position: absolute; inset: 0; opacity: .06; mix-blend-mode: overlay; pointer-events: none;
-                 background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
-
-  #hero .copy { position: absolute; left: 64px; top: 0; bottom: 0; width: 486px; display: flex; flex-direction: column; justify-content: center; color: var(--ink); }
-  #hero .badge { display: inline-flex; align-self: flex-start; align-items: center; gap: 8px; padding: 5px 12px 5px 6px; border-radius: 999px;
-                 background: var(--pill); border: 1px solid var(--line); font: 600 12.5px "Segoe UI Variable Text", "Segoe UI"; color: var(--ink2); margin-bottom: 26px; }
-  #hero .badge img { width: 20px; height: 20px; }
-  #hero .badge b { color: #e98a64; font-weight: 700; }
-  #hero h1 { font: 700 45px/1.07 "Segoe UI Variable Display", "Segoe UI"; letter-spacing: -1.5px; }
-  #hero h1 em { font-style: normal; background: linear-gradient(92deg, #f4a07c 0%, #e0764f 55%, #c95f3c 100%); -webkit-background-clip: text; color: transparent; }
-  #hero p { margin-top: 18px; font-size: 17.5px; line-height: 1.5; color: var(--ink2); }
-  #hero .stats { display: flex; margin-top: 34px; border-top: 1px solid var(--line); padding-top: 22px; }
-  #hero .stat { flex: 1; padding-right: 14px; }
-  #hero .stat + .stat { padding-left: 18px; border-left: 1px solid var(--line); }
-  #hero .stat b { display: block; font: 700 26px/1 "Segoe UI Variable Display", "Segoe UI"; letter-spacing: -.5px; color: var(--ink); }
-  #hero .stat span { display: block; margin-top: 7px; font-size: 12.5px; color: var(--ink3); }
-
-  /* the desktop */
-  #hero .desk { position: absolute; left: 584px; top: 40px; width: 656px; height: 560px; border-radius: 18px; overflow: hidden; isolation: isolate;
-                box-shadow: 0 0 0 1px rgba(255,255,255,.10), 0 40px 90px -20px rgba(0,0,0,.70), 0 0 120px rgba(217,112,76,.18); }
-  #hero.light .desk { box-shadow: 0 0 0 1px rgba(0,0,0,.08), 0 40px 90px -24px rgba(80,40,20,.35), 0 0 120px rgba(217,112,76,.16); }
-  #hero .wall { position: absolute; inset: 0; z-index: -1; background: linear-gradient(165deg, #2b1720 0%, #1a1020 55%, #0f0c18 100%); }
-  #hero.light .wall { background: linear-gradient(165deg, #fbe9df 0%, #f3dbe4 55%, #e3dcf3 100%); }
-  #hero .blob { position: absolute; border-radius: 50%; filter: blur(34px); }
-  #hero .b1 { width: 560px; height: 300px; left: -120px; top: 300px; transform: rotate(-24deg); background: radial-gradient(closest-side, #e47a50, rgba(228,122,80,0)); }
-  #hero .b2 { width: 460px; height: 280px; left: 260px; top: 210px; transform: rotate(28deg); background: radial-gradient(closest-side, #a83a6c, rgba(168,58,108,0)); }
-  #hero .b3 { width: 360px; height: 360px; left: 380px; top: -120px; background: radial-gradient(closest-side, #f0a05e, rgba(240,160,94,0)); opacity: .75; }
-  #hero .b4 { width: 420px; height: 420px; left: 420px; top: 330px; background: radial-gradient(closest-side, #5b44c4, rgba(91,68,196,0)); opacity: .8; }
-  #hero.light .blob { opacity: .55; }
-  #hero .bloom { position: absolute; left: 0; top: 0; mix-blend-mode: screen; filter: blur(1.5px) saturate(115%); }
-  #hero.light .bloom { mix-blend-mode: multiply; opacity: .55; }
-  #hero .sheen { position: absolute; width: 900px; height: 900px; left: -260px; top: 120px; border-radius: 50%;
-                 background: conic-gradient(from 200deg, transparent 0deg, rgba(255,255,255,.10) 40deg, transparent 90deg, rgba(255,255,255,.06) 160deg, transparent 220deg);
-                 filter: blur(18px); }
-
-  #hero .w-picker { position: absolute; left: 26px; top: 26px; transform: scale(.78); transform-origin: 0 0; }
-  #hero .w-flyout { position: absolute; right: 14px; bottom: 62px; transform: scale(.78); transform-origin: 100% 100%; }
-
-  #hero .taskbar { position: absolute; left: 0; right: 0; bottom: 0; height: 48px; display: flex; align-items: center; justify-content: center;
-                   backdrop-filter: blur(24px) saturate(140%); }
-  #hero.dark .taskbar  { background: rgba(28,28,30,.80); border-top: 1px solid rgba(255,255,255,.07); color: #fff; }
-  #hero.light .taskbar { background: rgba(243,243,243,.82); border-top: 1px solid rgba(0,0,0,.06); color: #1b1b1b; }
-  #hero .apps { display: flex; gap: 4px; }
-  #hero .app { position: relative; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 5px; }
-  #hero .app img { width: 24px; height: 24px; }
-  #hero .app.on::after { content: ""; position: absolute; bottom: 2px; left: 50%; width: 6px; height: 3px; margin-left: -3px; border-radius: 2px; background: currentColor; opacity: .5; }
-  #hero .app.front { background: rgba(255,255,255,.08); }
-  #hero.light .app.front { background: rgba(0,0,0,.05); }
-  #hero .app.front::after { width: 16px; margin-left: -8px; background: #e0764f; opacity: 1; }
-  #hero .corner { position: absolute; right: 10px; top: 0; bottom: 0; display: flex; align-items: center; gap: 12px;
-                  font-family: "Segoe Fluent Icons", "Segoe MDL2 Assets"; font-size: 13px; }
-  #hero .corner .me { width: 30px; height: 38px; display: grid; place-items: center; border-radius: 5px; background: rgba(255,255,255,.10); }
-  #hero.light .corner .me { background: rgba(0,0,0,.06); }
-  #hero .corner .me img { width: 16px; height: 16px; }
-  #hero .corner .clock { font: 11.5px/1.25 "Segoe UI Variable Text", "Segoe UI"; text-align: right; }
-
   /* ------------------------------------------------ theme split */
   .split { position: relative; }
   .split .layer { position: absolute; inset: 0; }
@@ -128,30 +62,14 @@
 <div id="root"></div>
 <script>
 const params = new URLSearchParams(location.hash.slice(1).replace(/^([^&=]+)(?=&|$)/, 'view=$1'));
-const view = params.get('view') || 'hero-dark', lang = params.get('lang') || 'en';
+const view = params.get('view') || 'picker-dark', lang = params.get('lang') || 'en';
 const L = {
   en: { picker: 'Claude Accounts', settings: 'Settings — Claude Accounts',
-        badge: '<b>v1.0</b> · rewritten in native C++',
-        h1: 'Every Claude account,<br><em>one click away.</em>',
-        p: 'Run several Claude Desktop accounts side by side on Windows, each in its own window and all of them signed in.',
-        stats: [['75 ms', 'to the picker'], ['550 KB', 'one exe, no runtime'], ['16 MB', 'waiting in the tray']],
         icons: ['Switcher', 'Main', 'Account 2', 'Work', 'Add account'], clock: ['10:41', '16.10.2026'] },
   ru: { picker: 'Аккаунты Claude', settings: 'Настройки — Аккаунты Claude',
-        badge: '<b>v1.0</b> · переписан на C++',
-        h1: 'Все аккаунты Claude<br><em>в один клик.</em>',
-        p: 'Несколько аккаунтов Claude Desktop сразу: каждый в своём окне и без выхода из аккаунта.',
-        stats: [['75 мс', 'до окна выбора'], ['550 КБ', 'один exe без среды'], ['16 МБ', 'в трее']],
         icons: ['Переключатель', 'Основной', 'Account 2', 'Work', 'Добавить'], clock: ['10:41', '16.10.2026'] },
 }[lang];
 
-const bloom = (theme) => {
-  const petals = [-14, -30, -46, -62, -78, -94].map((a, i) =>
-    `<ellipse cx="230" cy="0" rx="250" ry="${70 - i * 5}" transform="rotate(${a})" fill="url(#pg${i % 2})"/>`).join('');
-  return `<svg class="bloom" viewBox="0 0 656 560" width="656" height="560"><defs>
-      <linearGradient id="pg0" x1="0" x2="1"><stop offset="0" stop-color="#ffb08a" stop-opacity="0"/><stop offset=".55" stop-color="#ec7c55" stop-opacity=".55"/><stop offset="1" stop-color="#b8436f" stop-opacity=".9"/></linearGradient>
-      <linearGradient id="pg1" x1="0" x2="1"><stop offset="0" stop-color="#ffcf9e" stop-opacity="0"/><stop offset=".6" stop-color="#d9617a" stop-opacity=".5"/><stop offset="1" stop-color="#6d4cc9" stop-opacity=".85"/></linearGradient>
-    </defs><g transform="translate(40 600)">${petals}</g></svg>`;
-};
 const shot = (file) => `<img class="shot" srcset="${file} 2x" alt="">`;
 const win = (theme, file, title, attrs = '') =>
   `<div class="win ${theme}" ${attrs}><div class="bar"><img srcset="ico/app-32.png 2x" alt=""><span>${title}</span><i class="x"></i></div>${shot(file)}</div>`;
@@ -160,30 +78,6 @@ const tray = (theme) => `<div class="tray ${theme}"><span>&#xE70E;</span><span>&
   <span class="me"><img srcset="ico/app-32.png 2x" alt=""></span><span class="clock">${L.clock[0]}<br>${L.clock[1]}</span></div>`;
 
 const views = {
-  hero: (theme) => `
-    <div id="hero" class="${theme}"><div class="grain"></div>
-      <div class="copy">
-        <div class="badge"><img srcset="ico/app-64.png 3.2x" alt="">${L.badge}</div>
-        <h1>${L.h1}</h1>
-        <p>${L.p}</p>
-        <div class="stats">${L.stats.map(([b, t]) => `<div class="stat"><b>${b}</b><span>${t}</span></div>`).join('')}</div>
-      </div>
-      <div class="desk">
-        <div class="wall"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div><div class="sheen"></div>${bloom(theme)}</div>
-        <div class="w-picker">${win(theme, `picker-${theme}.png`, L.picker)}</div>
-        <div class="w-flyout">${flyout(theme)}</div>
-        <div class="taskbar">
-          <div class="apps">
-            <span class="app front"><img srcset="ico/app-64.png 2.67x" alt=""></span>
-            <span class="app on"><img srcset="ico/account-1-64.png 2.67x" alt=""></span>
-            <span class="app on"><img srcset="ico/account-2-64.png 2.67x" alt=""></span>
-            <span class="app"><img srcset="ico/account-3-64.png 2.67x" alt=""></span>
-          </div>
-          <div class="corner"><span>&#xE70E;</span><span class="me"><img srcset="ico/app-32.png 2x" alt=""></span><span>&#xE701;</span><span>&#xE767;</span>
-            <span class="clock">${L.clock[0]}<br>${L.clock[1]}</span></div>
-        </div>
-      </div>
-    </div>`,
   picker: (theme) => `<div class="stage">${win(theme, `picker-${theme}.png`, L.picker)}</div>`,
   startup: (theme) => `<div class="stage">${win(theme, `startup-${theme}.png`, L.picker)}</div>`,
   tray: () => `<div class="stage row">${['dark', 'light'].map(t => `<div class="stack">${flyout(t)}${tray(t)}</div>`).join('')}</div>`,

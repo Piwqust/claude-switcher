@@ -78,7 +78,7 @@ jobs:
           $base = "https://github.com/${{ github.repository }}/releases/download/$tag"
 
           @"
-          <p align="center"><img src="https://raw.githubusercontent.com/${{ github.repository }}/$tag/docs/images/hero-dark.png" alt="Claude Profile Switcher $version" width="100%"></p>
+          <p align="center"><img src="https://raw.githubusercontent.com/${{ github.repository }}/$tag/docs/images/hero.png" alt="Claude Profile Switcher $version" width="100%"></p>
 
           ## Download
 

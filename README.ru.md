@@ -1,8 +1,10 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: light)" srcset="docs/images/ru/hero-light.png">
-  <img src="docs/images/ru/hero-dark.png" alt="Claude Profile Switcher: окно выбора аккаунта и меню в трее" width="100%">
+  <source media="(prefers-reduced-motion: reduce)" srcset="docs/images/ru/hero.png">
+  <source srcset="docs/images/ru/hero.avif" type="image/avif">
+  <source srcset="docs/images/ru/hero.webp" type="image/webp">
+  <img src="docs/images/ru/hero.gif" alt="Ctrl+Alt+C, выбор аккаунта в Claude Profile Switcher, и аккаунт открывается уже с выполненным входом" width="100%">
 </picture>
 
 # Claude Profile Switcher

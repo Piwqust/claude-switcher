@@ -1,8 +1,10 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: light)" srcset="docs/images/hero-light.png">
-  <img src="docs/images/hero-dark.png" alt="Claude Profile Switcher: the account picker and the tray flyout" width="100%">
+  <source media="(prefers-reduced-motion: reduce)" srcset="docs/images/hero.png">
+  <source srcset="docs/images/hero.avif" type="image/avif">
+  <source srcset="docs/images/hero.webp" type="image/webp">
+  <img src="docs/images/hero.gif" alt="Press Ctrl+Alt+C, pick an account in Claude Profile Switcher, and it opens already signed in" width="100%">
 </picture>
 
 # Claude Profile Switcher

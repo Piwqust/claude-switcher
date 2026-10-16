@@ -53,7 +53,7 @@ Keep text short and plain: buttons name the action ("Open now"), labels name the
    .\tools\demo.ps1 -Theme light -Language ru
    ```
    The demo runs over made-up accounts in `%TEMP%\cps-demo`. It never starts Claude and leaves your shortcuts, start with Windows, global shortcuts and the real switcher alone.
-3. If you changed how anything looks, regenerate the pictures in `docs/images`: `.\tools\make-images.ps1`. It captures only the demo's own windows with PrintWindow, so nothing else on your screen can end up in them.
+3. If you changed how anything looks, regenerate the pictures in `docs/images`: `.\tools\make-images.ps1`. It captures only the demo's own windows with PrintWindow, so nothing else on your screen can end up in them. Then `.\tools\hero\render.ps1` turns the same captures into the animated hero at the top of the README and the social preview. It needs Node.js and ffmpeg; `npx remotion studio` in `tools\hero` previews the animation.
 4. Add a line under "Unreleased" in [CHANGELOG.md](CHANGELOG.md).
 
 ## Windows traps that have bitten before

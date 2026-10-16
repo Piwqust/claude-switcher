@@ -11,7 +11,8 @@
        Edge at 2x, trimming the transparent margin.
 
     English pictures go to docs\images, Russian ones to docs\images\ru. Takes a couple of
-    minutes. Build first: build.cmd.
+    minutes. Build first: build.cmd. The captures stay in %TEMP%\cps-images for the
+    animated hero and the social preview: run tools\hero\render.ps1 next.
 
 .EXAMPLE
     .\tools\make-images.ps1
@@ -91,8 +92,6 @@ foreach ($lang in $Languages) {
 
     # ---- 2. layouts
     $dest = if ($lang -eq 'en') { $OutDir } else { Join-Path $OutDir $lang }
-    Render $work 'hero-dark' $lang '1280,640' "$dest\hero-dark.png"
-    Render $work 'hero-light' $lang '1280,640' "$dest\hero-light.png"
     foreach ($v in @(
         @('picker-dark', '900,620', 'picker-dark'), @('picker-light', '900,620', 'picker-light'),
         @('startup-dark', '900,700', 'startup-dark'), @('startup-light', '900,700', 'startup-light'),
@@ -100,9 +99,5 @@ foreach ($lang in $Languages) {
         @('settings', '1500,900', 'settings'), @('icons', '1100,560', 'icons'))) {
         Render $work $v[0] $lang $v[1] "$dest\$($v[2]).png" -Trim
     }
-    if ($lang -eq 'en') {
-        # GitHub's social preview: 1280x640 and under 1 MB.
-        Render $work 'hero-dark' $lang '1280,640' "$OutDir\social-preview.png" 1
-        Copy-Item "$work\ico\app.png" (Join-Path $OutDir 'logo.png') -Force
-    }
+    if ($lang -eq 'en') { Copy-Item "$work\ico\app.png" (Join-Path $OutDir 'logo.png') -Force }
 }

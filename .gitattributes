@@ -14,6 +14,10 @@
 
 *.ico   binary
 *.png   binary
+*.gif   binary
+*.webp  binary
+*.avif  binary
 *.exe   binary
 
 tools/compose.html linguist-vendored
+tools/hero/** linguist-vendored
