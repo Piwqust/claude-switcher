@@ -1,6 +1,6 @@
 # Claude Profile Switcher — site
 
-The landing page for [Claude Profile Switcher](https://github.com/Piwqust/claude-switcher): plain HTML, CSS and JavaScript, no build step. It lives apart from the app's repository.
+The landing page for [Claude Profile Switcher](https://github.com/Piwqust/claude-switcher): plain HTML, CSS and JavaScript, no build step. It lives on its own `gh-pages` branch, apart from the app's code.
 
 Preview it locally:
 
@@ -19,4 +19,4 @@ Then open http://localhost:4173. Opening `index.html` straight from disk works t
 - **Pictures are the app's own.** `img/tray-dark.png`, `img/icons-dark.png`, `img/themes.png` and `img/main-icon.png` come from the app repository's `docs/images`; `img/hero-film.jpg` is the social preview image.
 - **Fonts:** Segoe UI Variable on Windows, Inter from Google Fonts elsewhere; Cascadia Mono for paths.
 
-Deployed as static files behind Caddy on the shared server; see `deploy.sh`.
+This is the `gh-pages` branch of the app's repository: it shares no history with `main`, and GitHub Pages serves it as is. Push here and the site updates.
