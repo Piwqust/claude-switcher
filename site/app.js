@@ -1,5 +1,5 @@
-// Claude Profile Switcher — site. No dependencies. Everything works without this file; it only makes
-// the picker, the countdown control, the FAQ drawer and the download choice respond.
+// Claude Profile Switcher — site. No dependencies. The page reads fine without this file; it makes the
+// hero picker work, plays the film and keeps the small interface demos moving.
 
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
@@ -12,14 +12,15 @@
   const live = $('[data-live]');
   const tip = $('[data-tip]');
   const many = $('[data-open-many]');
-  const tryLine = $('[data-try]');
-  const toggles = $$('[data-toggle-picker]');
+  const hint = $('[data-try]');
+  const reopen = $('.hero__reopen');
   const cards = $$('.acct[data-acct]');
   const BADGE = { Work: ['W', '#3d77a6'], Personal: ['P', '#3f8a58'] };
+  const picked = new Set();
   let front = 'Work';
-  let picked = new Set();
 
   const say = (text) => { if (live) live.textContent = text; };
+  const setStatus = (card, text) => { $('[data-status]', card).textContent = text; };
 
   function renderTaskbar(added) {
     if (!taskbar) return;
@@ -47,13 +48,10 @@
     cards.forEach((c) => c.classList.toggle('is-front', c.dataset.name === front && c.classList.contains('is-open')));
   }
 
-  function setStatus(card, text) { $('[data-status]', card).textContent = text; }
-
   function openAccount(card) {
     const name = card.dataset.name;
     if (card.classList.contains('is-open')) {
-      front = name;
-      renderTaskbar();
+      front = name; renderTaskbar();
       say(`${name} is already open; its window comes forward`);
       return;
     }
@@ -63,9 +61,9 @@
       card.classList.remove('is-launching');
       card.classList.add('is-open');
       setStatus(card, 'Open');
-      front = name;
-      renderTaskbar(name);
+      front = name; renderTaskbar(name);
       say(`${name} opened, signed in`);
+      if (hint) hint.textContent = 'Click a taskbar button to close it';
     };
     reduced ? done() : setTimeout(done, 520);
   }
@@ -74,146 +72,109 @@
     const name = card.dataset.name;
     card.classList.remove('is-open', 'is-front');
     setStatus(card, 'Just now');
-    if (front === name) {
-      const other = cards.find((c) => c.classList.contains('is-open'));
-      front = other ? other.dataset.name : '';
-    }
+    if (front === name) { const other = cards.find((c) => c.classList.contains('is-open')); front = other ? other.dataset.name : ''; }
     renderTaskbar();
     say(`${name} closed`);
   }
 
   function updatePicked() {
-    cards.forEach((c) => {
-      const on = picked.has(c);
-      c.classList.toggle('is-picked', on);
-      c.setAttribute('aria-pressed', String(on));
-    });
+    cards.forEach((c) => { const on = picked.has(c); c.classList.toggle('is-picked', on); c.setAttribute('aria-pressed', String(on)); });
     if (!many) return;
-    if (picked.size >= 2) {
-      many.hidden = false;
-      many.textContent = `Open ${picked.size} accounts`;
-      if (tip) tip.hidden = true;
-    } else {
-      many.hidden = true;
-      if (tip) tip.hidden = false;
-    }
+    const show = picked.size >= 2;
+    many.hidden = !show;
+    if (show) many.textContent = `Open ${picked.size} accounts`;
+    if (tip) tip.hidden = show;
   }
 
   function setPickerShown(show) {
-    if (!picker) return;
     picker.classList.toggle('is-hidden', !show);
-    toggles.forEach((t) => t.setAttribute('aria-expanded', String(show)));
+    if (reopen) reopen.hidden = show;
     say(show ? 'Picker shown' : 'Picker hidden. Press Ctrl+Alt+C to bring it back');
-    if (tryLine) tryLine.textContent = show ? 'Try it: press 1, 2 or 3, or Ctrl+Alt+C' : 'Press Ctrl+Alt+C, or click the C, to bring it back';
   }
 
   if (picker) {
-    if (matchMedia('(pointer: coarse)').matches && tryLine) tryLine.textContent = 'Try it: tap a card. Close a window from the taskbar.';
-    cards.forEach((card) => {
-      card.addEventListener('click', (e) => {
-        if (e.ctrlKey || e.metaKey) {
-          picked.has(card) ? picked.delete(card) : picked.add(card);
-          updatePicked();
-          return;
-        }
-        picked.clear(); updatePicked();
-        openAccount(card);
-      });
-    });
-    many && many.addEventListener('click', () => {
-      picked.forEach((c) => openAccount(c));
+    if (matchMedia('(pointer: coarse)').matches && hint) hint.textContent = 'Try it: tap a card';
+    cards.forEach((card) => card.addEventListener('click', (e) => {
+      if (e.ctrlKey || e.metaKey) { picked.has(card) ? picked.delete(card) : picked.add(card); updatePicked(); return; }
       picked.clear(); updatePicked();
-    });
-    toggles.forEach((t) => t.addEventListener('click', () => setPickerShown(picker.classList.contains('is-hidden'))));
+      openAccount(card);
+    }));
+    many && many.addEventListener('click', () => { picked.forEach((c) => openAccount(c)); picked.clear(); updatePicked(); });
+    $$('[data-toggle-picker]').forEach((t) => t.addEventListener('click', () => setPickerShown(picker.classList.contains('is-hidden'))));
 
     document.addEventListener('keydown', (e) => {
       const tag = (e.target.tagName || '').toLowerCase();
       if (tag === 'input' || tag === 'textarea') return;
-      if (e.ctrlKey && e.altKey && (e.key === 'c' || e.key === 'C' || e.code === 'KeyC')) {
+      if (e.ctrlKey && e.altKey && e.code === 'KeyC') {
         e.preventDefault();
         setPickerShown(picker.classList.contains('is-hidden'));
-        if (!picker.classList.contains('is-hidden')) picker.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' });
         return;
       }
       const n = /^Digit([1-9])$/.exec(e.code);
       if (!n) return;
       const card = cards[Number(n[1]) - 1];
       if (!card) return;
-      const heroVisible = picker.getBoundingClientRect().bottom > 0 && picker.getBoundingClientRect().top < innerHeight;
       if (e.ctrlKey && e.altKey) { e.preventDefault(); openAccount(card); return; }
-      if (e.ctrlKey || e.altKey || e.metaKey || picker.classList.contains('is-hidden') || !heroVisible) return;
+      const r = picker.getBoundingClientRect();
+      const visible = r.bottom > 0 && r.top < innerHeight;
+      if (e.ctrlKey || e.altKey || e.metaKey || picker.classList.contains('is-hidden') || !visible) return;
       openAccount(card);
     });
     renderTaskbar();
   }
 
   // ---------- the film ----------
-  const film = $('.film__video');
-  const filmBtn = $('[data-film-toggle]');
-  if (film && filmBtn) {
-    if (reduced) { film.removeAttribute('autoplay'); film.pause(); filmBtn.textContent = 'Play'; filmBtn.setAttribute('aria-pressed', 'true'); }
-    filmBtn.addEventListener('click', () => {
-      if (film.paused) { film.play().catch(() => {}); filmBtn.textContent = 'Pause'; filmBtn.setAttribute('aria-pressed', 'false'); }
-      else { film.pause(); filmBtn.textContent = 'Play'; filmBtn.setAttribute('aria-pressed', 'true'); }
-    });
+  const film = $('.hero__film');
+  const video = $('.hero__video');
+  function playFilm() {
+    if (!video) return;
+    film.classList.add('is-playing');
+    video.play().catch(() => film.classList.remove('is-playing'));
   }
-
-  // ---------- the countdown control ----------
-  const show = $('.show');
-  const word = $('[data-show-word]');
-  const seg = $$('.seg [role="radio"]');
-  function pickSeg(btn, focus) {
-    seg.forEach((b) => { const on = b === btn; b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; });
-    const s = Number(btn.dataset.sec);
-    show.dataset.show = s ? 'on' : 'off';
-    word.textContent = s ? `in ${s} s` : 'when you choose';
-    if (focus) btn.focus();
-  }
-  if (show && word && seg.length) {
-    seg.forEach((b, i) => {
-      b.tabIndex = b.getAttribute('aria-checked') === 'true' ? 0 : -1;
-      b.addEventListener('click', () => pickSeg(b));
-      b.addEventListener('keydown', (e) => {
-        const d = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
-        if (!d) return;
-        e.preventDefault();
-        pickSeg(seg[(i + d + seg.length) % seg.length], true);
-      });
-    });
-  }
-
-  // ---------- FAQ drawer: one card open at a time ----------
-  const fcards = $$('.fcard');
-  fcards.forEach((card) => {
-    const btn = $('button', card);
-    btn.addEventListener('click', () => {
-      const opening = !card.classList.contains('is-open');
-      fcards.forEach((c) => { c.classList.remove('is-open'); $('button', c).setAttribute('aria-expanded', 'false'); });
-      if (opening) { card.classList.add('is-open'); btn.setAttribute('aria-expanded', 'true'); }
-    });
+  $('[data-film]') && $('[data-film]').addEventListener('click', playFilm);
+  $('[data-film-cta]') && $('[data-film-cta]').addEventListener('click', () => {
+    film.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+    playFilm();
+  });
+  video && video.addEventListener('click', () => {
+    if (video.paused) playFilm(); else { video.pause(); film.classList.remove('is-playing'); }
   });
 
-  // ---------- download: name the next account, choose the build ----------
-  const form = $('[data-get]');
-  if (form) {
-    const field = $('#acct-name');
-    const initial = $('[data-initial]');
-    const colours = ['#3d77a6', '#3f8a58', '#8b5fb3', '#b0603f', '#2f7f86'];
-    field.addEventListener('input', () => {
-      const v = field.value.trim();
-      initial.textContent = v ? v[0].toUpperCase() : '?';
-      initial.style.background = colours[(v.charCodeAt(0) || 0) % colours.length];
-    });
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const arch = (new FormData(form).get('arch') || 'x64');
-      location.href = `https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-${arch}.exe`;
-    });
-  }
+  // ---------- small demos that keep moving (only while on screen) ----------
+  const onScreen = new Set();
+  const watch = new IntersectionObserver((es) => es.forEach((en) => en.isIntersecting ? onScreen.add(en.target) : onScreen.delete(en.target)));
+  const loop = (el, ms, fn) => { if (!el || reduced) return; watch.observe(el); setInterval(() => { if (onScreen.has(el) && !document.hidden) fn(); }, ms); };
 
-  // ---------- reveals: once, staggered within each group ----------
-  const groups = [['.board .tile'], ['.steps .step'], ['.drawer .fcard'], ['.word .wk'], ['.stats [data-reveal]']];
-  groups.forEach(([sel]) => $$(sel).forEach((el, i) => el.style.setProperty('--d', i)));
+  // launcher: the shortcut is pressed and the selection walks down the list
+  const launcher = $('.launcher');
+  const rows = $$('.launcher .lrow:not(.lrow--dim)');
+  const capsL = $$('.launcher__keys .cap');
+  let li = 0;
+  loop(launcher, 1800, () => {
+    capsL.forEach((c, i) => setTimeout(() => c.classList.add('is-down'), i * 90));
+    setTimeout(() => capsL.forEach((c) => c.classList.remove('is-down')), 420);
+    rows.forEach((r) => r.classList.remove('is-sel'));
+    li = (li + 1) % rows.length;
+    rows[li] && rows[li].classList.add('is-sel');
+  });
+
+  // countdown card: the number follows the bar
+  const count = $('[data-count]');
+  let n = 5;
+  loop(count && count.closest('.card'), 1000, () => { n = n <= 1 ? 5 : n - 1; count.textContent = n; });
+
+  // hotkeys card: Ctrl+Alt+1…9
+  const cycle = $('[data-cycle]');
+  const capsW = $$('.card--wide .cap');
+  let d = 2;
+  loop(cycle && cycle.closest('.card'), 1500, () => {
+    d = d % 9 + 1; cycle.textContent = d;
+    capsW.forEach((c) => c.classList.add('is-down'));
+    setTimeout(() => capsW.forEach((c) => c.classList.remove('is-down')), 260);
+  });
+
+  // ---------- reveals: once, staggered within each row ----------
+  [['.wall .card'], ['.glows .gcard'], ['.trio .tcard']].forEach(([sel]) => $$(sel).forEach((el, i) => el.style.setProperty('--d', i % 4)));
   const targets = $$('[data-reveal]');
   if (!('IntersectionObserver' in window)) { targets.forEach((el) => el.classList.add('is-in')); return; }
   const io = new IntersectionObserver((entries) => {
@@ -222,7 +183,7 @@
       entry.target.classList.add('is-in');
       io.unobserve(entry.target);
     }
-  }, { rootMargin: '0px 0px -10% 0px', threshold: 0.08 });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
   targets.forEach((el) => io.observe(el));
   addEventListener('load', () => setTimeout(() => {
     targets.forEach((el) => { const r = el.getBoundingClientRect(); if (r.top < innerHeight && r.bottom > 0) el.classList.add('is-in'); });
