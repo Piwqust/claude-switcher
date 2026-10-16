@@ -13,10 +13,10 @@
 
 <sub>A native C++ rewrite of <a href="https://github.com/PriyanshuGeTRekT/Claude-Code-Desktop-Switcher">Claude Code Desktop Switcher</a> by @PriyanshuGeTRekT: same idea, about 130 times faster to open.</sub>
 
-[![Latest release](https://img.shields.io/github/v/release/Piwqust/claude-profile-switcher?style=flat-square&color=d9704c)](https://github.com/Piwqust/claude-profile-switcher/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/Piwqust/claude-profile-switcher/total?style=flat-square&color=d9704c)](https://github.com/Piwqust/claude-profile-switcher/releases)
-[![Build](https://img.shields.io/github/actions/workflow/status/Piwqust/claude-profile-switcher/build.yml?branch=main&style=flat-square&label=build)](https://github.com/Piwqust/claude-profile-switcher/actions/workflows/build.yml)
-[![MIT License](https://img.shields.io/github/license/Piwqust/claude-profile-switcher?style=flat-square)](LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/Piwqust/claude-switcher?style=flat-square&color=d9704c)](https://github.com/Piwqust/claude-switcher/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/Piwqust/claude-switcher/total?style=flat-square&color=d9704c)](https://github.com/Piwqust/claude-switcher/releases)
+[![Build](https://img.shields.io/github/actions/workflow/status/Piwqust/claude-switcher/build.yml?branch=main&style=flat-square&label=build)](https://github.com/Piwqust/claude-switcher/actions/workflows/build.yml)
+[![MIT License](https://img.shields.io/github/license/Piwqust/claude-switcher?style=flat-square)](LICENSE)
 <br>
 ![Windows 10 | 11](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?style=flat-square&logo=windows&logoColor=white)
 ![C++ Win32](https://img.shields.io/badge/C%2B%2B-Win32%20%C2%B7%20Direct2D-00599C?style=flat-square&logo=cplusplus&logoColor=white)
@@ -26,11 +26,11 @@
 
 <br>
 
-<a href="https://github.com/Piwqust/claude-profile-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe"><img src="https://img.shields.io/badge/Download%20for%20Windows-x64%20%C2%B7%20Intel%20%26%20AMD-d9704c?style=for-the-badge&logo=windows&logoColor=white" alt="Download for Windows x64" height="40"></a>
+<a href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe"><img src="https://img.shields.io/badge/Download%20for%20Windows-x64%20%C2%B7%20Intel%20%26%20AMD-d9704c?style=for-the-badge&logo=windows&logoColor=white" alt="Download for Windows x64" height="40"></a>
 &nbsp;
-<a href="https://github.com/Piwqust/claude-profile-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe"><img src="https://img.shields.io/badge/Download%20for%20Windows-ARM64%20%C2%B7%20Snapdragon-55617a?style=for-the-badge&logo=windows&logoColor=white" alt="Download for Windows ARM64" height="40"></a>
+<a href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe"><img src="https://img.shields.io/badge/Download%20for%20Windows-ARM64%20%C2%B7%20Snapdragon-55617a?style=for-the-badge&logo=windows&logoColor=white" alt="Download for Windows ARM64" height="40"></a>
 
-<sub>One exe, nothing else to install · <a href="https://github.com/Piwqust/claude-profile-switcher/releases">all releases</a> · <a href="README.ru.md">Русский</a></sub>
+<sub>One exe, nothing else to install · <a href="https://github.com/Piwqust/claude-switcher/releases">all releases</a> · <a href="README.ru.md">Русский</a></sub>
 
 </div>
 
@@ -111,8 +111,8 @@ Claude Profile Switcher started from [Claude Code Desktop Switcher](https://gith
 
    | Processor | File |
    | --- | --- |
-   | Intel or AMD (almost every PC) | [ClaudeProfileSwitcher-x64.exe](https://github.com/Piwqust/claude-profile-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe) |
-   | ARM: Snapdragon, Surface Pro X and the like | [ClaudeProfileSwitcher-arm64.exe](https://github.com/Piwqust/claude-profile-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe) |
+   | Intel or AMD (almost every PC) | [ClaudeProfileSwitcher-x64.exe](https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe) |
+   | ARM: Snapdragon, Surface Pro X and the like | [ClaudeProfileSwitcher-arm64.exe](https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe) |
 
    Not sure which you have? Open **Settings → System → About** and look at **System type**.
 
@@ -293,7 +293,7 @@ What the switcher does, step by step:
 - **Sign-ins are never touched.** Tokens, cookies and passwords are not read or copied. Each account signs in by itself in its own Claude window.
 - **Claude is not modified.** Only standard Electron and Windows mechanisms; no patching, no proxy.
 - **No admin rights.** Everything goes into your user profile: `%LOCALAPPDATA%\ClaudeProfiles` and an `HKCU\…\Run` value for start with Windows.
-- **Built in the open.** Every release is built by [GitHub Actions](https://github.com/Piwqust/claude-profile-switcher/actions) from this repository, with SHA-256 checksums next to the files.
+- **Built in the open.** Every release is built by [GitHub Actions](https://github.com/Piwqust/claude-switcher/actions) from this repository, with SHA-256 checksums next to the files.
 
 Found a vulnerability? See [SECURITY.md](SECURITY.md).
 
@@ -340,8 +340,8 @@ By default it follows the Windows display language: Russian when Windows is in R
 You need Visual Studio 2022 or the Build Tools with "Desktop development with C++". For ARM64 add "MSVC ARM64 build tools".
 
 ```bat
-git clone https://github.com/Piwqust/claude-profile-switcher.git
-cd claude-profile-switcher
+git clone https://github.com/Piwqust/claude-switcher.git
+cd claude-switcher
 build.cmd           :: build\x64\ClaudeProfileSwitcher.exe
 build.cmd arm64     :: build\arm64\ClaudeProfileSwitcher.exe
 ```

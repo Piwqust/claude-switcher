@@ -6,7 +6,7 @@ Fixes ship in the latest version. Please update to it before reporting a problem
 
 ## Reporting a vulnerability
 
-Please do not open a public issue. Use GitHub's [private vulnerability reporting](https://github.com/Piwqust/claude-profile-switcher/security/advisories/new) instead.
+Please do not open a public issue. Use GitHub's [private vulnerability reporting](https://github.com/Piwqust/claude-switcher/security/advisories/new) instead.
 
 Describe what the vulnerability allows, how to reproduce it and which version you used. You will get a reply within a week. Once it is fixed, a new version is released and its notes credit you, unless you would rather they did not.
 

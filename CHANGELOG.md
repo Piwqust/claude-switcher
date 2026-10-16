@@ -36,5 +36,5 @@ The first release. Claude Profile Switcher is built on [Claude Code Desktop Swit
 - Start with Windows uses `HKCU\…\Run` instead of a shortcut in the Startup folder. The old shortcut is removed.
 - Messages appear as notifications and dialogs instead of a status line at the bottom of the window.
 
-[Unreleased]: https://github.com/Piwqust/claude-profile-switcher/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/Piwqust/claude-profile-switcher/releases/tag/v1.0.0
+[Unreleased]: https://github.com/Piwqust/claude-switcher/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/Piwqust/claude-switcher/releases/tag/v1.0.0

@@ -13,10 +13,10 @@
 
 <sub>Нативная версия <a href="https://github.com/PriyanshuGeTRekT/Claude-Code-Desktop-Switcher">Claude Code Desktop Switcher</a> от @PriyanshuGeTRekT, переписанная на C++: та же идея, а окно открывается примерно в 130 раз быстрее.</sub>
 
-[![Последний релиз](https://img.shields.io/github/v/release/Piwqust/claude-profile-switcher?style=flat-square&color=d9704c&label=%D1%80%D0%B5%D0%BB%D0%B8%D0%B7)](https://github.com/Piwqust/claude-profile-switcher/releases/latest)
-[![Скачивания](https://img.shields.io/github/downloads/Piwqust/claude-profile-switcher/total?style=flat-square&color=d9704c&label=%D1%81%D0%BA%D0%B0%D1%87%D0%B8%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F)](https://github.com/Piwqust/claude-profile-switcher/releases)
-[![Сборка](https://img.shields.io/github/actions/workflow/status/Piwqust/claude-profile-switcher/build.yml?branch=main&style=flat-square&label=%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0)](https://github.com/Piwqust/claude-profile-switcher/actions/workflows/build.yml)
-[![Лицензия MIT](https://img.shields.io/github/license/Piwqust/claude-profile-switcher?style=flat-square)](LICENSE)
+[![Последний релиз](https://img.shields.io/github/v/release/Piwqust/claude-switcher?style=flat-square&color=d9704c&label=%D1%80%D0%B5%D0%BB%D0%B8%D0%B7)](https://github.com/Piwqust/claude-switcher/releases/latest)
+[![Скачивания](https://img.shields.io/github/downloads/Piwqust/claude-switcher/total?style=flat-square&color=d9704c&label=%D1%81%D0%BA%D0%B0%D1%87%D0%B8%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F)](https://github.com/Piwqust/claude-switcher/releases)
+[![Сборка](https://img.shields.io/github/actions/workflow/status/Piwqust/claude-switcher/build.yml?branch=main&style=flat-square&label=%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0)](https://github.com/Piwqust/claude-switcher/actions/workflows/build.yml)
+[![Лицензия MIT](https://img.shields.io/github/license/Piwqust/claude-switcher?style=flat-square)](LICENSE)
 <br>
 ![Windows 10 | 11](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?style=flat-square&logo=windows&logoColor=white)
 ![C++ Win32](https://img.shields.io/badge/C%2B%2B-Win32%20%C2%B7%20Direct2D-00599C?style=flat-square&logo=cplusplus&logoColor=white)
@@ -26,11 +26,11 @@
 
 <br>
 
-<a href="https://github.com/Piwqust/claude-profile-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe"><img src="https://img.shields.io/badge/%D0%A1%D0%BA%D0%B0%D1%87%D0%B0%D1%82%D1%8C%20%D0%B4%D0%BB%D1%8F%20Windows-x64%20%C2%B7%20Intel%20%D0%B8%20AMD-d9704c?style=for-the-badge&logo=windows&logoColor=white" alt="Скачать для Windows x64" height="40"></a>
+<a href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe"><img src="https://img.shields.io/badge/%D0%A1%D0%BA%D0%B0%D1%87%D0%B0%D1%82%D1%8C%20%D0%B4%D0%BB%D1%8F%20Windows-x64%20%C2%B7%20Intel%20%D0%B8%20AMD-d9704c?style=for-the-badge&logo=windows&logoColor=white" alt="Скачать для Windows x64" height="40"></a>
 &nbsp;
-<a href="https://github.com/Piwqust/claude-profile-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe"><img src="https://img.shields.io/badge/%D0%A1%D0%BA%D0%B0%D1%87%D0%B0%D1%82%D1%8C%20%D0%B4%D0%BB%D1%8F%20Windows-ARM64%20%C2%B7%20Snapdragon-55617a?style=for-the-badge&logo=windows&logoColor=white" alt="Скачать для Windows ARM64" height="40"></a>
+<a href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe"><img src="https://img.shields.io/badge/%D0%A1%D0%BA%D0%B0%D1%87%D0%B0%D1%82%D1%8C%20%D0%B4%D0%BB%D1%8F%20Windows-ARM64%20%C2%B7%20Snapdragon-55617a?style=for-the-badge&logo=windows&logoColor=white" alt="Скачать для Windows ARM64" height="40"></a>
 
-<sub>Один exe, ничего ставить не нужно · <a href="https://github.com/Piwqust/claude-profile-switcher/releases">все версии</a> · <a href="README.md">English</a></sub>
+<sub>Один exe, ничего ставить не нужно · <a href="https://github.com/Piwqust/claude-switcher/releases">все версии</a> · <a href="README.md">English</a></sub>
 
 </div>
 
@@ -111,8 +111,8 @@ Claude Profile Switcher вырос из [Claude Code Desktop Switcher](https://g
 
    | Процессор | Файл |
    | --- | --- |
-   | Intel или AMD (почти все ПК) | [ClaudeProfileSwitcher-x64.exe](https://github.com/Piwqust/claude-profile-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe) |
-   | ARM: Snapdragon, Surface Pro X и подобные | [ClaudeProfileSwitcher-arm64.exe](https://github.com/Piwqust/claude-profile-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe) |
+   | Intel или AMD (почти все ПК) | [ClaudeProfileSwitcher-x64.exe](https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe) |
+   | ARM: Snapdragon, Surface Pro X и подобные | [ClaudeProfileSwitcher-arm64.exe](https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe) |
 
    Не знаете, какой у вас? Откройте **Параметры → Система → О системе** и посмотрите строку **Тип системы**.
 
@@ -293,7 +293,7 @@ flowchart LR
 - **Не трогает вход.** Токены, cookie и пароли не читаются и не копируются. Каждый аккаунт входит сам в своём окне Claude.
 - **Claude не изменяется.** Используются только стандартные параметры Electron и Windows. Файлы Claude не патчатся, прокси нет.
 - **Без прав администратора.** Всё ставится в профиль пользователя: `%LOCALAPPDATA%\ClaudeProfiles` и ключ `HKCU\…\Run` для автозапуска.
-- **Открытый код.** Каждый релиз собирается в [GitHub Actions](https://github.com/Piwqust/claude-profile-switcher/actions) из этого репозитория, контрольные суммы лежат рядом с файлами.
+- **Открытый код.** Каждый релиз собирается в [GitHub Actions](https://github.com/Piwqust/claude-switcher/actions) из этого репозитория, контрольные суммы лежат рядом с файлами.
 
 Нашли уязвимость? Напишите по инструкции в [SECURITY.md](SECURITY.md).
 
@@ -340,8 +340,8 @@ flowchart LR
 Нужна Visual Studio 2022 (или Build Tools) с компонентом «Разработка классических приложений на C++». Для ARM64 добавьте «MSVC ARM64 build tools».
 
 ```bat
-git clone https://github.com/Piwqust/claude-profile-switcher.git
-cd claude-profile-switcher
+git clone https://github.com/Piwqust/claude-switcher.git
+cd claude-switcher
 build.cmd           :: build\x64\ClaudeProfileSwitcher.exe
 build.cmd arm64     :: build\arm64\ClaudeProfileSwitcher.exe
 ```

@@ -4,7 +4,7 @@ Thanks for stopping by. Bug reports, ideas and pull requests are all welcome.
 
 ## Reporting a bug
 
-Open an [issue](https://github.com/Piwqust/claude-profile-switcher/issues/new/choose) from the template. The most useful details are:
+Open an [issue](https://github.com/Piwqust/claude-switcher/issues/new/choose) from the template. The most useful details are:
 
 - the switcher's version (Settings → About) and your Windows version;
 - which Claude build you have: Microsoft Store or the installer;
