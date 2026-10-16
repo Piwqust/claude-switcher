@@ -184,7 +184,10 @@
   const radios = $$('input[name="arch"]');
   const setArch = (arch) => {
     dl.href = `https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-${arch}.exe`;
-    dlLabel.textContent = `Download for ${arch === 'arm64' ? 'ARM64' : 'x64'}`;
+    const text = `Download for ${arch === 'arm64' ? 'ARM64' : 'x64'}`;
+    dlLabel.textContent = '';
+    dlLabel.append(rollLabel(text));
+    dl.setAttribute('aria-label', text);
   };
   radios.forEach((r) => r.addEventListener('change', () => setArch(r.value)));
   // Windows on ARM reports itself through client hints; preselect it when it does
@@ -218,12 +221,30 @@
     secs.forEach((s) => spy.observe(s));
   }
 
-  // ---------- primary buttons fill from the side the pointer came in ----------
-  $$('[data-fill]').forEach((b) => {
-    const at = (e) => { const r = b.getBoundingClientRect(); b.style.setProperty('--fx', `${e.clientX - r.left}px`); b.style.setProperty('--fy', `${e.clientY - r.top}px`); };
-    b.addEventListener('pointerenter', (e) => { if (e.pointerType !== 'mouse') return; at(e); b.classList.add('is-filled'); });
-    b.addEventListener('pointerleave', (e) => { at(e); b.classList.remove('is-filled'); });
-  });
+  // ---------- buttons: the label is set twice so it can roll on hover ----------
+  const rollLabel = (text) => {
+    const line = (hidden) => {
+      const l = document.createElement('span');
+      l.className = 'roll__line';
+      l.setAttribute('aria-hidden', 'true');
+      [...text].forEach((ch, i) => { const c = document.createElement('span'); c.textContent = ch; c.style.setProperty('--i', i); l.append(c); });
+      return l;
+    };
+    const r = document.createElement('span');
+    r.className = 'roll';
+    r.append(line(), line());
+    return r;
+  };
+  const rollify = (btn) => {
+    const label = $('[data-download-label]', btn);
+    const node = label || [...btn.childNodes].reverse().find((n) => n.nodeType === 3 && n.textContent.trim());
+    if (!node) return;
+    const text = node.textContent.trim();
+    btn.setAttribute('aria-label', text);
+    if (label) { label.textContent = ''; label.append(rollLabel(text)); }
+    else node.replaceWith(rollLabel(text));
+  };
+  $$('.btn').forEach(rollify);
 
   // ---------- Fluent reveal light: borders light up where the pointer is ----------
   if (matchMedia('(hover: hover)').matches) {
