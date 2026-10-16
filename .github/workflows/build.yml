@@ -38,7 +38,7 @@ jobs:
           "ClaudeProfileSwitcher.exe (${{ matrix.arch }}): $kb KB" >> $env:GITHUB_STEP_SUMMARY
           if ($exe.Length -gt 1MB) { throw "The exe grew past 1 MB ($kb KB)." }
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ClaudeProfileSwitcher-${{ matrix.arch }}
           path: build/${{ matrix.arch }}/ClaudeProfileSwitcher.exe
