@@ -194,15 +194,49 @@
     }).catch(() => {});
   }
 
-  // ---------- the title bar follows the section in view ----------
+  // ---------- the title bar: a marker slides to the hovered link and rests on the section in view ----------
+  const pivot = $('.pivot');
   const links = $$('.pivot a');
+  const ink = $('.pivot__ink');
+  const inkTo = (a) => {
+    if (!ink) return;
+    if (!a) { pivot.style.setProperty('--io', 0); return; }
+    pivot.style.setProperty('--ix', `${a.offsetLeft + a.offsetWidth / 2 - 8}px`);
+    pivot.style.setProperty('--io', 1);
+  };
+  const activeLink = () => links.find((a) => a.classList.contains('is-active'));
+  links.forEach((a) => { a.addEventListener('pointerenter', () => inkTo(a)); a.addEventListener('focus', () => inkTo(a)); });
+  pivot && pivot.addEventListener('pointerleave', () => inkTo(activeLink()));
+  pivot && pivot.addEventListener('focusout', () => inkTo(activeLink()));
   const secs = links.map((a) => $(a.getAttribute('href'))).filter(Boolean);
   if ('IntersectionObserver' in window && secs.length) {
     const spy = new IntersectionObserver((es) => es.forEach((en) => {
       if (!en.isIntersecting) return;
       links.forEach((a) => a.classList.toggle('is-active', a.getAttribute('href') === '#' + en.target.id));
+      if (!pivot.matches(':hover')) inkTo(activeLink());
     }), { rootMargin: '-45% 0px -50% 0px' });
     secs.forEach((s) => spy.observe(s));
+  }
+
+  // ---------- primary buttons fill from the side the pointer came in ----------
+  $$('[data-fill]').forEach((b) => {
+    const at = (e) => { const r = b.getBoundingClientRect(); b.style.setProperty('--fx', `${e.clientX - r.left}px`); b.style.setProperty('--fy', `${e.clientY - r.top}px`); };
+    b.addEventListener('pointerenter', (e) => { if (e.pointerType !== 'mouse') return; at(e); b.classList.add('is-filled'); });
+    b.addEventListener('pointerleave', (e) => { at(e); b.classList.remove('is-filled'); });
+  });
+
+  // ---------- Fluent reveal light: borders light up where the pointer is ----------
+  if (matchMedia('(hover: hover)').matches) {
+    let lit = null;
+    document.addEventListener('pointermove', (e) => {
+      const el = e.target.closest && e.target.closest('.tile, .row, .expanders details, .flow__node');
+      if (lit && lit !== el) lit = null;
+      if (!el) return;
+      lit = el;
+      const r = el.getBoundingClientRect();
+      el.style.setProperty('--mx', `${e.clientX - r.left}px`);
+      el.style.setProperty('--my', `${e.clientY - r.top}px`);
+    }, { passive: true });
   }
 
   // ---------- reveals: once, staggered within a group ----------
