@@ -15,9 +15,9 @@
 [![Downloads](https://img.shields.io/github/downloads/Piwqust/claude-switcher/total?style=flat-square&color=d9704c)](https://github.com/Piwqust/claude-switcher/releases)
 [![MIT License](https://img.shields.io/github/license/Piwqust/claude-switcher?style=flat-square)](LICENSE)
 
-<a href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe"><img src="https://img.shields.io/badge/Download%20for%20Windows-x64%20%C2%B7%20Intel%20%26%20AMD-d9704c?style=for-the-badge&logo=data:image%2Fsvg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0yIDJoOS41djkuNUgyem0xMC41IDBIMjJ2OS41aC05LjV6TTIgMTIuNWg5LjVWMjJIMnptMTAuNSAwSDIyVjIyaC05LjV6Ii8%2BPC9zdmc%2B&logoColor=white" alt="Download for Windows x64" height="40"></a>
+<a href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe"><img src="docs/images/download-x64.svg" alt="Download for Windows x64" height="52"></a>
 &nbsp;
-<a href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe"><img src="https://img.shields.io/badge/Download%20for%20Windows-ARM64%20%C2%B7%20Snapdragon-55617a?style=for-the-badge&logo=data:image%2Fsvg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0yIDJoOS41djkuNUgyem0xMC41IDBIMjJ2OS41aC05LjV6TTIgMTIuNWg5LjVWMjJIMnptMTAuNSAwSDIyVjIyaC05LjV6Ii8%2BPC9zdmc%2B&logoColor=white" alt="Download for Windows ARM64" height="40"></a>
+<a href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe"><img src="docs/images/download-arm64.svg" alt="Download for Windows ARM64" height="52"></a>
 
 <sub>One exe, nothing else to install · <a href="https://github.com/Piwqust/claude-switcher/releases">all releases</a> · <a href="docs/guide.md">user guide</a> · <a href="README.ru.md">Русский</a></sub>
 
