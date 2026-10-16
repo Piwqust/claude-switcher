@@ -64,6 +64,7 @@ jobs:
           $pkg = New-Item -ItemType Directory "ClaudeProfileSwitcher-$version"
           Copy-Item ClaudeProfileSwitcher-x64.exe, ClaudeProfileSwitcher-arm64.exe $pkg
           Copy-Item ../LICENSE, ../README.md, ../README.ru.md, ../CHANGELOG.md $pkg
+          Copy-Item ../docs/*.md (New-Item -ItemType Directory "$pkg/docs")
           Compress-Archive -Path "$pkg/*" -DestinationPath "ClaudeProfileSwitcher-$version-windows.zip"
 
           $files = 'ClaudeProfileSwitcher-x64.exe', 'ClaudeProfileSwitcher-arm64.exe', "ClaudeProfileSwitcher-$version-windows.zip"
