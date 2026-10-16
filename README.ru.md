@@ -11,11 +11,15 @@
 
 **Несколько аккаунтов Claude Desktop на одном компьютере с Windows: каждый в своём окне, и во всех выполнен вход.**
 
-[**Скачать для Windows**](https://github.com/Piwqust/claude-switcher/releases/latest) · [Руководство](docs/guide.ru.md) · [English](README.md)
-
 [![Последний релиз](https://img.shields.io/github/v/release/Piwqust/claude-switcher?style=flat-square&color=d9704c&label=%D1%80%D0%B5%D0%BB%D0%B8%D0%B7)](https://github.com/Piwqust/claude-switcher/releases/latest)
 [![Скачивания](https://img.shields.io/github/downloads/Piwqust/claude-switcher/total?style=flat-square&color=d9704c&label=%D1%81%D0%BA%D0%B0%D1%87%D0%B8%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F)](https://github.com/Piwqust/claude-switcher/releases)
 [![Лицензия MIT](https://img.shields.io/github/license/Piwqust/claude-switcher?style=flat-square)](LICENSE)
+
+<a href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe"><img src="https://img.shields.io/badge/%D0%A1%D0%BA%D0%B0%D1%87%D0%B0%D1%82%D1%8C%20%D0%B4%D0%BB%D1%8F%20Windows-x64%20%C2%B7%20Intel%20%D0%B8%20AMD-d9704c?style=for-the-badge&logo=data:image%2Fsvg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0yIDJoOS41djkuNUgyem0xMC41IDBIMjJ2OS41aC05LjV6TTIgMTIuNWg5LjVWMjJIMnptMTAuNSAwSDIyVjIyaC05LjV6Ii8%2BPC9zdmc%2B&logoColor=white" alt="Скачать для Windows x64" height="40"></a>
+&nbsp;
+<a href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe"><img src="https://img.shields.io/badge/%D0%A1%D0%BA%D0%B0%D1%87%D0%B0%D1%82%D1%8C%20%D0%B4%D0%BB%D1%8F%20Windows-ARM64%20%C2%B7%20Snapdragon-55617a?style=for-the-badge&logo=data:image%2Fsvg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0yIDJoOS41djkuNUgyem0xMC41IDBIMjJ2OS41aC05LjV6TTIgMTIuNWg5LjVWMjJIMnptMTAuNSAwSDIyVjIyaC05LjV6Ii8%2BPC9zdmc%2B&logoColor=white" alt="Скачать для Windows ARM64" height="40"></a>
+
+<sub>Один exe, ничего ставить не нужно · <a href="https://github.com/Piwqust/claude-switcher/releases">все версии</a> · <a href="docs/guide.ru.md">руководство</a> · <a href="README.md">English</a></sub>
 
 </div>
 
