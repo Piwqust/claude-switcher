@@ -33,7 +33,7 @@ jobs:
         shell: cmd
         run: build.cmd ${{ matrix.arch }} dist\ClaudeProfileSwitcher-${{ matrix.arch }}.exe
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: exe-${{ matrix.arch }}
           path: dist/ClaudeProfileSwitcher-${{ matrix.arch }}.exe
