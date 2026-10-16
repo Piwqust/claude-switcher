@@ -3,374 +3,403 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Claude Profile Switcher — every Claude account at once</title>
+  <title>Claude Profile Switcher for Windows</title>
   <meta name="description" content="Run several Claude Desktop accounts on one Windows PC, each in its own window and all signed in at once. Press Ctrl+Alt+C, pick one, and it opens signed in.">
-  <meta name="theme-color" content="#0e0e0e">
-  <meta property="og:title" content="Claude Profile Switcher">
-  <meta property="og:description" content="Several Claude Desktop accounts on one Windows PC, each in its own window, all signed in at once.">
+  <meta name="theme-color" content="#07080a">
+  <meta property="og:title" content="Claude Profile Switcher for Windows">
+  <meta property="og:description" content="Every Claude account on one PC, each in its own window, all signed in at once.">
   <meta property="og:image" content="img/hero-film.jpg">
   <link rel="icon" href="img/logo.png">
-  <link rel="preconnect" href="https://api.fontshare.com">
-  <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin>
-  <link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script>document.documentElement.classList.add('js')</script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
 
-  <header class="topbar">
-    <a class="mark" href="#top" aria-label="Claude Profile Switcher, home">
-      <img src="img/logo.png" width="28" height="28" alt="">
-      <span>Profile Switcher</span>
-    </a>
+  <header class="nav-wrap">
     <nav class="nav" aria-label="Main">
-      <a class="link" href="#features">Features</a>
-      <a class="link" href="#setup">Setup</a>
-      <a class="link" href="#questions">Questions</a>
-      <a class="link" href="https://github.com/Piwqust/claude-switcher">GitHub</a>
+      <a class="nav__brand" href="#top"><img src="img/logo.png" width="22" height="22" alt=""><span>Profile Switcher</span></a>
+      <div class="nav__links">
+        <a href="#features">Features</a>
+        <a href="#native">Native</a>
+        <a href="#privacy">Privacy</a>
+        <a href="#how">How it works</a>
+        <a href="#faq">FAQ</a>
+      </div>
+      <a class="nav__ghost" href="https://github.com/Piwqust/claude-switcher">GitHub</a>
+      <a class="btn btn--light btn--sm" href="#download"><svg class="win" viewBox="0 0 16 16" aria-hidden="true"><path d="M0 0h7.5v7.5H0zM8.5 0H16v7.5H8.5zM0 8.5h7.5V16H0zM8.5 8.5H16V16H8.5z"/></svg>Download</a>
     </nav>
-    <a class="key key--small" href="#download">Download</a>
   </header>
 
   <main id="main">
 
-    <!-- Hero: the C key, with the working picker on it -->
+    <!-- Hero -->
     <section class="hero" id="top" aria-labelledby="hero-title">
-      <div class="hero__copy">
-        <h1 id="hero-title" class="display" data-rise style="--i:0">All your Claude <br class="only-wide">accounts at once</h1>
-        <p class="hero__lead" data-rise style="--i:1">Claude Profile Switcher runs every Claude Desktop account in its own window on Windows. Press Ctrl+Alt+C, pick one, and it opens signed in.</p>
-        <div class="hero__actions" data-rise style="--i:2">
-          <a class="key" href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe">Download for Windows</a>
-          <a class="link link-plain" href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe">ARM64 build</a>
-        </div>
-        <p class="hero__note small" data-rise style="--i:3">Free and open source. Windows 10 or 11, one 550&nbsp;KB exe, nothing else to install.</p>
+      <div class="hero__glow" aria-hidden="true"></div>
+      <div class="hero__film">
+        <video class="hero__video" src="img/hero-film.mp4" poster="img/hero-film.jpg" width="1600" height="800" muted loop playsinline preload="metadata" aria-label="Pressing Ctrl+Alt+C opens the picker; choosing Work opens Claude already signed in"></video>
+        <button class="hero__play" type="button" data-film aria-label="Play the nine-second film"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg></button>
       </div>
+      <h1 id="hero-title" class="hero__title">Every Claude,<br class="br-phone"> at once</h1>
 
-      <div class="hero__stage">
-        <div class="bigkey" aria-hidden="true"><span class="bigkey__legend" data-l="C"></span></div>
-
-        <div class="hero__ui">
-          <button class="bigkey__hit" type="button" data-toggle-picker aria-controls="picker" aria-expanded="true">
-            <span class="sr-only">Show or hide the picker (Ctrl+Alt+C)</span>
-          </button>
-
-          <div class="picker" id="picker" data-ui role="dialog" aria-label="Claude Accounts, a working demo of the picker">
-            <div class="picker__title">
-              <img src="img/logo.png" width="18" height="18" alt="">
-              <span>Claude Accounts</span>
-              <button class="picker__x" type="button" data-toggle-picker aria-label="Close the picker">
-                <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
-              </button>
-            </div>
-            <div class="picker__head">
-              <p class="picker__h">Choose an account</p>
-              <svg class="picker__gear" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8Zm8.2 4.6-1.8-.3a6.7 6.7 0 0 1-.7 1.7l1 1.5-1.6 1.6-1.5-1a6.7 6.7 0 0 1-1.7.7l-.3 1.8h-2.3l-.3-1.8a6.7 6.7 0 0 1-1.7-.7l-1.5 1-1.6-1.6 1-1.5a6.7 6.7 0 0 1-.7-1.7l-1.8-.3v-2.3l1.8-.3c.2-.6.4-1.2.7-1.7l-1-1.5 1.6-1.6 1.5 1c.5-.3 1.1-.5 1.7-.7l.3-1.8h2.3l.3 1.8c.6.2 1.2.4 1.7.7l1.5-1 1.6 1.6-1 1.5c.3.5.5 1.1.7 1.7l1.8.3Z" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
-            </div>
-            <div class="picker__cards">
-              <button class="acct is-open" type="button" data-acct="1" data-name="Main" aria-pressed="false">
-                <span class="acct__num">1</span>
-                <span class="acct__av acct__av--main"><img src="img/main-icon.png" width="56" height="56" alt=""><i class="acct__dot"></i></span>
-                <span class="acct__name">Main</span>
-                <span class="acct__status" data-status data-was="Open">Open</span>
-                <span class="acct__sum">5 h 34% · 7 d 61%</span>
-                <span class="acct__usage">
-                  <span class="u"><span>5 h</span><b class="bar"><i style="--v:34%"></i></b><span>34%</span></span>
-                  <span class="u"><span>7 d</span><b class="bar"><i style="--v:61%"></i></b><span>61%</span></span>
-                  <span class="acct__upd">Updated just now</span>
-                </span>
-              </button>
-              <button class="acct is-open" type="button" data-acct="2" data-name="Work" aria-pressed="false">
-                <span class="acct__num">2</span>
-                <span class="acct__av acct__av--work">W<i class="acct__dot"></i></span>
-                <span class="acct__name">Work</span>
-                <span class="acct__status" data-status data-was="Open">Open</span>
-                <span class="acct__sum">5 h 72% · 7 d 48%</span>
-                <span class="acct__usage">
-                  <span class="u"><span>5 h</span><b class="bar"><i class="hi" style="--v:72%"></i></b><span>72%</span></span>
-                  <span class="u"><span>7 d</span><b class="bar"><i style="--v:48%"></i></b><span>48%</span></span>
-                  <span class="acct__upd">Updated just now</span>
-                </span>
-              </button>
-              <button class="acct" type="button" data-acct="3" data-name="Personal" aria-pressed="false">
-                <span class="acct__num">3</span>
-                <span class="acct__av acct__av--personal">P<i class="acct__dot"></i></span>
-                <span class="acct__name">Personal</span>
-                <span class="acct__status" data-status data-was="Yesterday, 11:06">Yesterday, 11:06</span>
-                <span class="acct__sum">5 h 12% · 7 d 23%</span>
-                <span class="acct__usage">
-                  <span class="u"><span>5 h</span><b class="bar"><i style="--v:12%"></i></b><span>12%</span></span>
-                  <span class="u"><span>7 d</span><b class="bar"><i style="--v:23%"></i></b><span>23%</span></span>
-                  <span class="acct__upd">Updated just now</span>
-                </span>
-              </button>
-              <span class="acct acct--add" aria-hidden="true">
-                <span class="acct__plus">+</span>
-                <span class="acct__name">Add</span>
-                <span class="acct__status">New sign-in</span>
-                <span class="acct__hint">Ctrl+N</span>
+      <div class="hero__ui">
+        <div class="picker" id="picker" data-ui role="dialog" aria-label="Claude Accounts, a working demo of the picker">
+          <div class="picker__title">
+            <img src="img/logo.png" width="18" height="18" alt="">
+            <span>Claude Accounts</span>
+            <button class="picker__x" type="button" data-toggle-picker aria-label="Hide the picker">
+              <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+            </button>
+          </div>
+          <div class="picker__head">
+            <p class="picker__h">Choose an account</p>
+            <span class="picker__keys" aria-hidden="true"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>C</kbd></span>
+          </div>
+          <div class="picker__cards">
+            <button class="acct is-open" type="button" data-acct="1" data-name="Main" aria-pressed="false">
+              <span class="acct__num">1</span>
+              <span class="acct__av acct__av--main"><img src="img/main-icon.png" width="56" height="56" alt=""><i class="acct__dot"></i></span>
+              <span class="acct__name">Main</span>
+              <span class="acct__status" data-status>Open</span>
+              <span class="acct__sum">5 h 34% · 7 d 61%</span>
+              <span class="acct__usage">
+                <span class="u"><span>5 h</span><b class="ubar"><i style="--v:34%"></i></b><span>34%</span></span>
+                <span class="u"><span>7 d</span><b class="ubar"><i style="--v:61%"></i></b><span>61%</span></span>
+                <span class="acct__upd">Updated just now</span>
               </span>
+            </button>
+            <button class="acct is-open" type="button" data-acct="2" data-name="Work" aria-pressed="false">
+              <span class="acct__num">2</span>
+              <span class="acct__av acct__av--work">W<i class="acct__dot"></i></span>
+              <span class="acct__name">Work</span>
+              <span class="acct__status" data-status>Open</span>
+              <span class="acct__sum">5 h 72% · 7 d 48%</span>
+              <span class="acct__usage">
+                <span class="u"><span>5 h</span><b class="ubar"><i class="hi" style="--v:72%"></i></b><span>72%</span></span>
+                <span class="u"><span>7 d</span><b class="ubar"><i style="--v:48%"></i></b><span>48%</span></span>
+                <span class="acct__upd">Updated just now</span>
+              </span>
+            </button>
+            <button class="acct" type="button" data-acct="3" data-name="Personal" aria-pressed="false">
+              <span class="acct__num">3</span>
+              <span class="acct__av acct__av--personal">P<i class="acct__dot"></i></span>
+              <span class="acct__name">Personal</span>
+              <span class="acct__status" data-status>Yesterday, 11:06</span>
+              <span class="acct__sum">5 h 12% · 7 d 23%</span>
+              <span class="acct__usage">
+                <span class="u"><span>5 h</span><b class="ubar"><i style="--v:12%"></i></b><span>12%</span></span>
+                <span class="u"><span>7 d</span><b class="ubar"><i style="--v:23%"></i></b><span>23%</span></span>
+                <span class="acct__upd">Updated just now</span>
+              </span>
+            </button>
+            <span class="acct acct--add" aria-hidden="true">
+              <span class="acct__plus">+</span>
+              <span class="acct__name">Add</span>
+              <span class="acct__status">New sign-in</span>
+              <span class="acct__hint">Ctrl+N</span>
+            </span>
+          </div>
+          <div class="picker__foot">
+            <span class="tgl" aria-hidden="true"><i></i></span>
+            <span class="picker__show">Show when Windows starts</span>
+            <span class="picker__tip" data-tip>Press a number to open, Ctrl+click to pick several</span>
+            <button class="picker__many" type="button" data-open-many hidden>Open 2 accounts</button>
+          </div>
+        </div>
+        <div class="taskbar" data-ui aria-label="Open Claude windows">
+          <span class="taskbar__app taskbar__app--switcher" title="Claude Profile Switcher"><img src="img/logo.png" width="24" height="24" alt="Switcher"></span>
+          <span class="taskbar__sep" aria-hidden="true"></span>
+          <span class="taskbar__list" data-taskbar></span>
+          <span class="taskbar__hint" data-try>Try it: press 1, 2 or 3</span>
+          <span class="taskbar__clock">10:41<br>16.10.2026</span>
+        </div>
+        <button class="hero__reopen" type="button" data-toggle-picker hidden>Press <kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>C</kbd> to bring the picker back</button>
+        <p class="sr-only" aria-live="polite" data-live></p>
+      </div>
+
+      <p class="hero__lead">Several Claude Desktop accounts on one Windows PC. Each in its own window, all signed in at the same time.</p>
+      <div class="hero__actions">
+        <a class="btn btn--light" href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe"><svg class="win" viewBox="0 0 16 16" aria-hidden="true"><path d="M0 0h7.5v7.5H0zM8.5 0H16v7.5H8.5zM0 8.5h7.5V16H0zM8.5 8.5H16V16H8.5z"/></svg>Download for Windows</a>
+        <button class="btn btn--ghost" type="button" data-film-cta><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"/><path d="M10 8v8l6-4z" fill="#0b0c0e"/></svg>Watch it work</button>
+      </div>
+      <p class="mono hero__meta">v1.0.0 <span>|</span> Windows 10+ <span>|</span> <a href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe">ARM64 build</a></p>
+    </section>
+
+    <!-- One shortcut -->
+    <section class="section" id="features" aria-labelledby="shortcut-title">
+      <h2 class="title" id="shortcut-title" data-reveal>Every account, one shortcut.<span>Switching no longer means signing out.</span></h2>
+
+      <div class="launcher" data-reveal>
+        <div class="launcher__glow" aria-hidden="true"></div>
+        <div class="launcher__win" data-ui aria-hidden="true">
+          <div class="launcher__search"><span class="caret"></span>Choose an account…<span class="launcher__esc"><kbd>Esc</kbd></span></div>
+          <p class="launcher__group">Accounts</p>
+          <div class="lrow is-sel"><img src="img/main-icon.png" width="22" height="22" alt=""><b>Main</b><span>Open</span><em><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>1</kbd></em></div>
+          <div class="lrow"><i class="disc disc--w">W</i><b>Work</b><span>Open</span><em><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>2</kbd></em></div>
+          <div class="lrow"><i class="disc disc--p">P</i><b>Personal</b><span>Yesterday, 11:06</span><em><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>3</kbd></em></div>
+          <div class="lrow lrow--dim"><i class="disc disc--add">+</i><b>Add account</b><span>New sign-in</span><em><kbd>Ctrl</kbd><kbd>N</kbd></em></div>
+        </div>
+        <div class="launcher__tiles" aria-hidden="true">
+          <span class="tile3d"><img src="img/main-icon.png" width="128" height="128" alt=""></span>
+          <span class="tile3d tile3d--w">W</span>
+          <span class="tile3d tile3d--p">P</span>
+          <span class="tile3d tile3d--add">+</span>
+        </div>
+        <div class="launcher__keys" aria-hidden="true"><kbd class="cap">Ctrl</kbd><span>+</span><kbd class="cap">Alt</kbd><span>+</span><kbd class="cap cap--hot">C</kbd></div>
+        <div class="launcher__cap">
+          <p><b>Open any account instantly.</b> Ctrl+Alt+C brings the picker up over any app. Ctrl+Alt+1 to 9 skips it and opens that account directly.</p>
+          <span class="chip"><img src="img/logo.png" width="14" height="14" alt="">Global shortcuts</span>
+        </div>
+      </div>
+
+      <!-- Feature wall -->
+      <div class="wall">
+        <article class="card" data-reveal>
+          <div class="card__ui" data-ui aria-hidden="true">
+            <div class="mini mini--split">
+              <div class="mini__list">
+                <p class="mini__group">Usage</p>
+                <div class="mrow"><img src="img/main-icon.png" width="18" height="18" alt=""><span>Main</span><em>34%</em></div>
+                <div class="mrow is-sel"><i class="disc disc--w">W</i><span>Work</span><em>72%</em></div>
+                <div class="mrow"><i class="disc disc--p">P</i><span>Personal</span><em>12%</em></div>
+              </div>
+              <div class="mini__preview">
+                <p class="mini__big">Work</p>
+                <div class="u u--lg"><span>5 h</span><b class="ubar"><i class="hi" style="--v:72%"></i></b><span>72%</span></div>
+                <div class="u u--lg"><span>7 d</span><b class="ubar"><i style="--v:48%"></i></b><span>48%</span></div>
+                <p class="mini__note">Updated just now</p>
+              </div>
             </div>
-            <div class="picker__foot">
-              <span class="tgl" aria-hidden="true"><i></i></span>
-              <span class="picker__show">Show when Windows starts</span>
-              <span class="picker__tip" data-tip>Press a number to open, Ctrl+click to pick several</span>
-              <button class="picker__many" type="button" data-open-many hidden>Open 2 accounts</button>
+          </div>
+          <p class="card__text"><b>Usage at a glance.</b> Every card shows how much of the 5-hour and 7-day limits that account has used.</p>
+          <span class="chip"><i class="dot dot--y"></i>Usage</span>
+        </article>
+
+        <article class="card" data-reveal>
+          <div class="card__ui" data-ui aria-hidden="true">
+            <div class="mini mini--cards">
+              <div class="mc is-picked"><img src="img/main-icon.png" width="40" height="40" alt=""><span>Main</span><i class="tick"></i></div>
+              <div class="mc is-picked"><i class="disc disc--w disc--lg">W</i><span>Work</span><i class="tick"></i></div>
+              <div class="mc is-picked"><i class="disc disc--p disc--lg">P</i><span>Personal</span><i class="tick"></i></div>
+              <div class="mini__btn">Open 3 accounts</div>
             </div>
           </div>
+          <p class="card__text"><b>Several at once.</b> Ctrl+click the cards, then open them all with one button.</p>
+          <span class="chip"><i class="dot dot--g"></i>Multi-open</span>
+        </article>
 
-          <div class="taskbar" data-ui aria-label="Open Claude windows">
-            <span class="taskbar__app taskbar__app--switcher" title="Claude Profile Switcher"><img src="img/logo.png" width="24" height="24" alt="Switcher"></span>
-            <span class="taskbar__sep" aria-hidden="true"></span>
-            <span class="taskbar__list" data-taskbar></span>
-            <span class="taskbar__clock nums">10:41<br>16.10.2026</span>
+        <article class="card" data-reveal>
+          <div class="card__ui" data-ui aria-hidden="true">
+            <div class="mini mini--count">
+              <div class="countdown">
+                <svg class="countdown__ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 9v4l2.5 1.5M9.5 2.5h5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                <div><p class="countdown__t">Opening “Work” in <span data-count>5</span> s</p><p class="countdown__s">Press any key to choose yourself</p></div>
+                <span class="countdown__btn">Open now</span>
+                <i class="countdown__bar"></i>
+              </div>
+              <div class="seg"><span>Off</span><span>3 s</span><span class="on">5 s</span><span>10 s</span></div>
+            </div>
           </div>
-          <p class="hero__try small" data-try>Try it: press 1, 2 or 3, or Ctrl+Alt+C</p>
-          <p class="sr-only" aria-live="polite" data-live></p>
+          <p class="card__text"><b>Ready when Windows is.</b> It starts with Windows and asks which account to open, or opens your usual ones after a countdown any key stops.</p>
+          <span class="chip"><i class="dot dot--o"></i>Startup</span>
+        </article>
+
+        <article class="card" data-reveal>
+          <div class="card__ui card__ui--shot">
+            <img src="img/tray-dark.png" width="642" height="662" alt="The tray flyout: Main and Work open, Personal last used yesterday, each with its usage" loading="lazy">
+          </div>
+          <p class="card__text"><b>Lives in the tray.</b> Click the tray icon for a flyout with every account and its usage. Right-click for the menu.</p>
+          <span class="chip"><i class="dot dot--b"></i>Tray flyout</span>
+        </article>
+
+        <article class="card card--wide" data-reveal>
+          <p class="card__text"><b>Hotkeys for everything.</b> Ctrl+Alt+1 to 9 opens an account, F2 renames it, Del removes it, Ctrl+N adds a new one.</p>
+          <div class="card__keys" aria-hidden="true"><kbd class="cap">Ctrl</kbd><span>+</span><kbd class="cap">Alt</kbd><span>+</span><kbd class="cap" data-cycle>2</kbd></div>
+          <span class="chip"><i class="dot dot--r"></i>Shortcuts</span>
+        </article>
+
+        <article class="card" data-reveal>
+          <div class="card__ui card__ui--shot card__ui--icons">
+            <img src="img/icons-dark.png" width="1680" height="350" alt="Shortcut icons: the switcher, Main, Account 2, Work and Add account, each at three sizes" loading="lazy">
+          </div>
+          <p class="card__text"><b>An icon for each account.</b> Desktop shortcuts, the jump list and the taskbar carry each account’s coloured badge.</p>
+          <span class="chip"><i class="dot dot--p"></i>Icons</span>
+        </article>
+
+        <article class="card" data-reveal>
+          <div class="card__ui card__ui--shot">
+            <img src="img/themes.png" width="1450" height="960" alt="The picker in dark and light themes side by side" loading="lazy">
+          </div>
+          <p class="card__text"><b>Feels like Windows 11.</b> Mica, rounded corners, dark and light themes that follow the system, English and Russian.</p>
+          <span class="chip"><i class="dot dot--w"></i>Themes</span>
+        </article>
+      </div>
+    </section>
+
+    <!-- Native -->
+    <section class="section" id="native" aria-labelledby="native-title">
+      <p class="pill" data-reveal>Native C++</p>
+      <h2 class="title" id="native-title" data-reveal>Small enough to forget it’s there.<span>One 550 KB exe. No .NET, no Electron, no PowerShell.</span></h2>
+      <div class="bench" data-reveal>
+        <div class="bench__glow" aria-hidden="true"></div>
+        <div class="bench__win">
+          <div class="bench__head"><span>Compared with the original PowerShell script</span><span class="mono">same PC, three accounts</span></div>
+          <div class="brow">
+            <p class="brow__label">Window appears in</p>
+            <div class="brow__bars">
+              <div class="bb"><span class="bb__name">Original 2.0</span><b class="bb__bar" style="--w:100%"></b><span class="bb__val">about 10 s</span></div>
+              <div class="bb bb--us"><span class="bb__name">Profile Switcher</span><b class="bb__bar" style="--w:1.5%"></b><span class="bb__val">75 ms</span></div>
+            </div>
+          </div>
+          <div class="brow">
+            <p class="brow__label">Memory once settled</p>
+            <div class="brow__bars">
+              <div class="bb"><span class="bb__name">Original 2.0</span><b class="bb__bar" style="--w:100%"></b><span class="bb__val">about 126 MB</span></div>
+              <div class="bb bb--us"><span class="bb__name">Profile Switcher</span><b class="bb__bar" style="--w:12.7%"></b><span class="bb__val">16 MB</span></div>
+            </div>
+          </div>
+          <div class="brow">
+            <p class="brow__label">What you run</p>
+            <div class="brow__bars">
+              <div class="bb bb--text"><span class="bb__name">Original 2.0</span><span class="bb__val">a .ps1 script through powershell.exe</span></div>
+              <div class="bb bb--text bb--us"><span class="bb__name">Profile Switcher</span><span class="bb__val">one 550 KB exe, x64 or ARM64</span></div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- Intro: the problem, then the film -->
-    <section class="intro" aria-label="What it does">
-      <p class="statement" data-reveal>Claude Desktop holds one sign-in at a time. The switcher gives every account <img class="thumb" src="img/thumb-picker.jpg" width="500" height="330" alt="The Main and Work cards in the picker"> its own window <img class="thumb" src="img/thumb-tray.jpg" width="520" height="345" alt="The tray flyout listing Main, Work and Personal"> and settings <img class="thumb" src="img/thumb-settings.jpg" width="490" height="326" alt="Two switches from the settings window">, all open together.</p>
-
-      <figure class="film" data-reveal>
-        <div class="film__frame shutter">
-          <video class="film__video" src="img/hero-film.mp4" poster="img/hero-film.jpg" width="1600" height="800" muted loop playsinline autoplay preload="metadata" aria-label="Pressing Ctrl+Alt+C opens the picker; choosing Work opens Claude already signed in"></video>
-        </div>
-        <figcaption class="film__cap">
-          <span>The whole thing in nine seconds: Ctrl+Alt+C, pick Work, and Claude opens already signed in.</span>
-          <button class="link link-plain film__btn" type="button" data-film-toggle aria-pressed="false">Pause</button>
-        </figcaption>
-      </figure>
-    </section>
-
-    <!-- Features: a board of close-ups -->
-    <section class="board" id="features" aria-labelledby="features-title">
-      <div data-reveal class="tile tile--a f1">
-        <img class="tile__shot tile__shot--tray" src="img/tray-dark.png" width="642" height="662" alt="The tray flyout: Main and Work open, Personal last used yesterday, each with its usage" loading="lazy">
-        <div class="tile__cap"><h3>Waits in the tray</h3><p>Click the tray icon for every account and its usage.</p></div>
-      </div>
-
-      <div data-reveal class="tile tile--b">
-        <h2 id="features-title" class="head">Everything is one key away</h2>
-      </div>
-
-      <div data-reveal class="tile tile--c f4">
-        <div class="tile__ui keys" data-ui aria-hidden="true"><span class="k">Ctrl</span><span class="k">Alt</span><span class="k k--hot">C</span></div>
-        <div class="tile__cap"><h3>Ctrl+Alt+C</h3><p>Opens the picker from any app.</p></div>
-      </div>
-
-      <div data-reveal class="tile tile--d f2">
-        <div class="tile__ui keys keys--num" data-ui aria-hidden="true"><span class="k">1</span><span class="k k--hot">2</span><span class="k">3</span><span class="k">4</span></div>
-        <div class="tile__cap"><h3>Ctrl+Alt+1 to 9</h3><p>Opens that account directly.</p></div>
-      </div>
-
-      <div data-reveal class="tile tile--e f3">
-        <div class="tile__ui usage" data-ui aria-hidden="true">
-          <span class="u"><span>5 h</span><b class="bar"><i class="hi" style="--v:72%"></i></b><span>72%</span></span>
-          <span class="u"><span>7 d</span><b class="bar"><i style="--v:48%"></i></b><span>48%</span></span>
-        </div>
-        <div class="tile__cap"><h3>Usage on every card</h3><p>How much of the 5-hour and 7-day limits each account has used.</p></div>
-      </div>
-
-      <div data-reveal class="tile tile--f">
-        <img class="tile__shot tile__shot--settings" src="img/settings-dark.jpg" width="930" height="860" alt="Settings: start with Windows, ask at sign-in, and which accounts open on their own" loading="lazy">
-        <div class="tile__cap"><h3>Starts with Windows</h3><p>It can ask which account to open, or open your usual ones.</p></div>
-      </div>
-
-      <div data-reveal class="tile tile--g f1">
-        <div class="tile__ui many" data-ui aria-hidden="true">
-          <span class="many__av"><img src="img/main-icon.png" width="64" height="64" alt=""></span>
-          <span class="many__av many__av--w">W</span>
-          <span class="many__av many__av--p">P</span>
-          <span class="many__btn">Open 3 accounts</span>
-        </div>
-        <div class="tile__cap"><h3>Several at once</h3><p>Ctrl+click the cards, then open them together.</p></div>
-      </div>
-
-      <div data-reveal class="tile tile--h f4">
-        <div class="tile__ui open" data-ui aria-hidden="true"><i></i><span>Open</span></div>
-        <div class="tile__cap"><h3>Green means open</h3><p>Click it and its window comes forward.</p></div>
-      </div>
-
-      <div data-reveal class="tile tile--i">
-        <img class="tile__shot tile__shot--icons" src="img/icons-dark.png" width="1680" height="350" alt="Shortcut icons: the switcher, Main, Account 2, Work and Add account, each at three sizes" loading="lazy">
-        <div class="tile__cap"><h3>An icon per account</h3><p>Shortcuts and taskbar buttons carry its badge.</p></div>
+    <!-- Privacy -->
+    <section class="section" id="privacy" aria-labelledby="privacy-title">
+      <h2 class="title" id="privacy-title" data-reveal>Private <em>by construction</em>.<span>It can’t leak what it never touches.</span></h2>
+      <div class="glows">
+        <article class="gcard gcard--o" data-reveal>
+          <div class="gcard__head"><span class="gcard__ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 12h17M12 3.5c2.6 2.6 2.6 14.4 0 17M12 3.5c-2.6 2.6-2.6 14.4 0 17M4 20 20 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span>No network</div>
+          <p>There is no networking code at all: no telemetry, no update check, no requests of any kind.</p>
+          <p class="gcard__big mono">0 requests</p>
+        </article>
+        <article class="gcard gcard--b" data-reveal>
+          <div class="gcard__head"><span class="gcard__ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span>Sign-ins untouched</div>
+          <p>Tokens, cookies and passwords are never read or copied. Each account signs in by itself, in its own window.</p>
+          <p class="gcard__big mono">0 tokens read</p>
+        </article>
+        <article class="gcard gcard--g" data-reveal>
+          <div class="gcard__head"><span class="gcard__ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.5 3.2 8.2 7.5 9.5 4.3-1.3 7.5-5 7.5-9.5V6z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m8.5 12 2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span>Claude unmodified</div>
+          <p>Only standard Electron and Windows mechanisms. No patching, no proxy, no injected code.</p>
+          <p class="gcard__big mono">0 patches</p>
+        </article>
+        <article class="gcard gcard--y" data-reveal>
+          <div class="gcard__head"><span class="gcard__ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4.5 20.5c1.2-3.6 4-5.5 7.5-5.5s6.3 1.9 7.5 5.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span>No admin rights</div>
+          <p>Everything goes into your user profile. Releases are built by GitHub Actions, with SHA-256 checksums.</p>
+          <p class="gcard__big mono">HKCU only</p>
+        </article>
       </div>
     </section>
 
-    <!-- Showcase: the countdown control, blown up -->
-    <section class="show" id="startup" data-show="on" aria-labelledby="show-title">
-      <div class="show__copy">
-        <h2 id="show-title" class="head" aria-live="polite">Work opens <span data-show-word>in 5&nbsp;s</span></h2>
-        <p>At Windows sign-in the switcher can open the accounts you tick. A countdown runs first, and any key stops it. Pick a countdown below.</p>
+    <!-- How it works -->
+    <section class="section" id="how" aria-labelledby="how-title">
+      <h2 class="title" id="how-title" data-reveal>One app, many sign-ins.<span>Each account is Claude Desktop with its own data folder.</span></h2>
+      <div class="trio">
+        <article class="tcard" data-reveal>
+          <div class="tcard__ui">
+            <pre class="code"><code><span class="c-mut"># what the switcher runs for “Work”</span>
+<span class="c-fn">Claude.exe</span> <span class="c-flag">--user-data-dir</span>=
+  <span class="c-str">"%LOCALAPPDATA%\ClaudeProfiles\Work"</span></code></pre>
+          </div>
+          <p class="tcard__t">A folder per account</p>
+          <p class="tcard__s">Electron keeps sign-in, chats and settings in one data folder. Point it at another, and it is another account that runs next to the first.</p>
+        </article>
+        <article class="tcard" data-reveal>
+          <div class="tcard__ui">
+            <div class="kv">
+              <p><span>Main</span><b>untouched</b></p>
+              <p><span>Started via</span><b>shell:AppsFolder</b></p>
+              <p><span>Auto update</span><b class="ok">kept</b></p>
+              <p><span>claude:// links</span><b class="ok">kept</b></p>
+            </div>
+          </div>
+          <p class="tcard__t">Your main account stays as it is</p>
+          <p class="tcard__s">It starts the way the Start menu starts it, so updates, links and the browser extension behave exactly as before.</p>
+        </article>
+        <article class="tcard" data-reveal>
+          <div class="tcard__ui">
+            <div class="split">
+              <div><p class="split__h">Each account</p><p>Sign-in</p><p>Chats</p><p>Window settings</p><p>Cache</p></div>
+              <div><p class="split__h">Shared</p><p>Claude Code settings</p><p>Plugins, MCP servers</p><p>claude:// links</p><p>Updates</p></div>
+            </div>
+          </div>
+          <p class="tcard__t">Separate where it matters</p>
+          <p class="tcard__s">Claude Code’s settings live in your user folder, so every account uses the same set. Each open account is a full copy of Claude.</p>
+        </article>
       </div>
-      <div class="seg" data-ui role="radiogroup" aria-label="Countdown before opening the ticked accounts">
-        <button type="button" role="radio" aria-checked="false" data-sec="0">Off</button>
-        <button type="button" role="radio" aria-checked="false" data-sec="3">3&nbsp;s</button>
-        <button type="button" role="radio" aria-checked="true" data-sec="5">5&nbsp;s</button>
-        <button type="button" role="radio" aria-checked="false" data-sec="10">10&nbsp;s</button>
-      </div>
+      <p class="more" data-reveal><a href="https://github.com/Piwqust/claude-switcher/blob/main/docs/how-it-works.md">Read how it works <span aria-hidden="true">→</span></a></p>
     </section>
 
-    <!-- Stats: three figures on stepped keys -->
-    <section class="stats" id="native" aria-labelledby="stats-title">
-      <div class="stat stat--a" data-reveal>
-        <p class="stat__fig display nums">75&nbsp;ms</p>
-        <p class="stat__cap">From starting it to a visible window. The PowerShell original took about 10&nbsp;s.</p>
-      </div>
-      <h2 id="stats-title" class="stats__title head" data-reveal>Small and native</h2>
-      <div class="stat stat--b" data-reveal>
-        <p class="stat__fig display nums">16&nbsp;MB</p>
-        <p class="stat__cap">Memory once it settles, against about 126&nbsp;MB.</p>
-      </div>
-      <div class="stat stat--c" data-reveal>
-        <p class="stat__fig display nums">550&nbsp;KB</p>
-        <p class="stat__cap">One exe in C++ and Direct2D. No .NET, no Electron.</p>
-      </div>
-      <p class="stats__note small">Measured on the same Windows&nbsp;11 PC with three accounts.</p>
-    </section>
-
-    <!-- How it works: one card, four fields -->
-    <section class="steps" id="setup" aria-labelledby="setup-title">
-      <ol class="steps__list">
-        <li data-reveal class="step f1">
-          <h2 id="setup-title" class="step__title">Setting it up</h2>
-          <div class="card" data-ui aria-hidden="true">
-            <span class="card__plus">+</span>
-            <span class="card__name">Add</span>
-            <span class="card__status">New sign-in</span>
-            <span class="card__hint">Ctrl+N</span>
-          </div>
-          <p class="step__text">First, run the exe and click&nbsp;Add.</p>
-        </li>
-        <li data-reveal class="step f4">
-          <div class="card card--filled" data-ui aria-hidden="true">
-            <span class="card__num">2</span>
-            <span class="card__av card__av--w">A2</span>
-            <span class="card__name">Account 2</span>
-            <span class="card__status card__status--busy">Opening…</span>
-          </div>
-          <p class="step__text">Then sign in once, in the new Claude&nbsp;window.</p>
-        </li>
-        <li data-reveal class="step f2">
-          <div class="card card--filled" data-ui aria-hidden="true">
-            <span class="card__num">2</span>
-            <span class="card__av card__av--w">W<i></i></span>
-            <span class="card__name">Work</span>
-            <span class="card__status card__status--open">Open</span>
-            <span class="card__usage"><span class="u"><span>5 h</span><b class="bar"><i style="--v:12%"></i></b><span>12%</span></span></span>
-          </div>
-          <p class="step__text">Now both accounts stay signed in, side by&nbsp;side.</p>
-        </li>
-        <li data-reveal class="step f3">
-          <div class="card card--filled" data-ui aria-hidden="true">
-            <span class="card__num">2</span>
-            <span class="card__av card__av--w">W</span>
-            <span class="card__name">Work</span>
-            <span class="card__status">Yesterday, 18:20</span>
-            <span class="card__keys"><span class="k">Ctrl</span><span class="k">Alt</span><span class="k">2</span></span>
-          </div>
-          <p class="step__text">Later, Ctrl+Alt+2 opens it from&nbsp;anywhere.</p>
-        </li>
+    <!-- Download -->
+    <section class="section cta" id="download" aria-labelledby="cta-title">
+      <h2 class="title" id="cta-title" data-reveal>Bring every account along.<span>Download and use it for free.</span></h2>
+      <ol class="steps" data-reveal>
+        <li><b>Download</b> the exe for your PC.</li>
+        <li><b>Run it.</b> It installs itself, no admin rights.</li>
+        <li><b>Click Add</b> and sign in once. Both stay signed in.</li>
       </ol>
+      <div class="hero__actions" data-reveal>
+        <a class="btn btn--light" href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe"><svg class="win" viewBox="0 0 16 16" aria-hidden="true"><path d="M0 0h7.5v7.5H0zM8.5 0H16v7.5H8.5zM0 8.5h7.5V16H0zM8.5 8.5H16V16H8.5z"/></svg>Download for x64</a>
+        <a class="btn btn--ghost" href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe">ARM64 for Snapdragon</a>
+      </div>
+      <p class="mono hero__meta" data-reveal>v1.0.0 <span>|</span> Windows 10+ <span>|</span> Needs Claude Desktop <span>|</span> MIT</p>
     </section>
 
-    <!-- FAQ: cards filed in a drawer -->
-    <section class="faq" id="questions" aria-labelledby="faq-title">
-      <h2 id="faq-title" class="head faq__title">Questions</h2>
-      <div class="drawer" data-drawer>
-        <div data-reveal class="fcard f1 is-open">
-          <h3 class="fcard__h">
-            <button type="button" aria-expanded="true" aria-controls="q1" id="q1-b"><span class="fcard__tab">Privacy</span><span class="fcard__q">Does it see my sign-ins?</span></button>
-          </h3>
-          <div class="fcard__a" id="q1" role="region" aria-labelledby="q1-b">
-            <p>No. It makes no network requests at all, and it never reads tokens, cookies or passwords. Each account signs in by itself, in its own Claude window.</p>
-          </div>
-        </div>
-        <div data-reveal class="fcard f2">
-          <h3 class="fcard__h">
-            <button type="button" aria-expanded="false" aria-controls="q2" id="q2-b"><span class="fcard__tab">Main account</span><span class="fcard__q">Does it change my main Claude?</span></button>
-          </h3>
-          <div class="fcard__a" id="q2" role="region" aria-labelledby="q2-b">
-            <p>No. Your main account starts the usual way and keeps auto update and claude:// links. The extra accounts live in their own folders, in <code>%LOCALAPPDATA%\ClaudeProfiles</code>.</p>
-          </div>
-        </div>
-        <div data-reveal class="fcard f4">
-          <h3 class="fcard__h">
-            <button type="button" aria-expanded="false" aria-controls="q3" id="q3-b"><span class="fcard__tab">Shared</span><span class="fcard__q">What do the accounts share?</span></button>
-          </h3>
-          <div class="fcard__a" id="q3" role="region" aria-labelledby="q3-b">
-            <p>Claude Code’s settings, plugins, MCP servers and history live in your user folder, so every account uses the same set. Links and Claude in Chrome go to the main account. Each open account is a full copy of Claude, so plan memory per window.</p>
-          </div>
-        </div>
-        <div data-reveal class="fcard f3">
-          <h3 class="fcard__h">
-            <button type="button" aria-expanded="false" aria-controls="q4" id="q4-b"><span class="fcard__tab">Warning</span><span class="fcard__q">Why does Windows warn me?</span></button>
-          </h3>
-          <div class="fcard__a" id="q4" role="region" aria-labelledby="q4-b">
-            <p>The exe is not code-signed, so the first run may show “Windows protected your PC”. Click More info, then Run anyway. Every release is built by GitHub Actions from the repository, with SHA-256 checksums next to the files.</p>
-          </div>
-        </div>
-        <div data-reveal class="fcard f1">
-          <h3 class="fcard__h">
-            <button type="button" aria-expanded="false" aria-controls="q5" id="q5-b"><span class="fcard__tab">Updates</span><span class="fcard__q">How do I update it?</span></button>
-          </h3>
-          <div class="fcard__a" id="q5" role="region" aria-labelledby="q5-b">
-            <p>Run the new version. Your accounts and settings are kept. Claude itself updates once for every account; windows already open stay on the old version until restarted.</p>
-          </div>
-        </div>
-        <div data-reveal class="fcard f2">
-          <h3 class="fcard__h">
-            <button type="button" aria-expanded="false" aria-controls="q6" id="q6-b"><span class="fcard__tab">Origin</span><span class="fcard__q">Where did it come from?</span></button>
-          </h3>
-          <div class="fcard__a" id="q6" role="region" aria-labelledby="q6-b">
-            <p>It is a C++ rewrite of <a class="link-plain" href="https://github.com/PriyanshuGeTRekT/Claude-Code-Desktop-Switcher">Claude Code Desktop Switcher</a> by @PriyanshuGeTRekT, the PowerShell script that worked out the idea. The profile folders are the same, so an existing setup carries straight over.</p>
-          </div>
-        </div>
+    <!-- FAQ -->
+    <section class="section faq" id="faq" aria-labelledby="faq-title">
+      <h2 class="title" id="faq-title" data-reveal>FAQs</h2>
+      <div class="faq__list" data-reveal>
+        <details>
+          <summary>Why does Windows say “Windows protected your PC”?</summary>
+          <p>The exe is not code-signed, so SmartScreen warns on the first run. Click More info, then Run anyway. Every release is built by GitHub Actions from the public repository, with SHA-256 checksums next to the files.</p>
+        </details>
+        <details>
+          <summary>Does it change my main Claude account?</summary>
+          <p>No. Your main account starts the usual way and keeps auto update and claude:// links. Extra accounts live in their own folders in <code>%LOCALAPPDATA%\ClaudeProfiles</code>.</p>
+        </details>
+        <details>
+          <summary>What do the accounts share?</summary>
+          <p>Claude Code’s settings, plugins, MCP servers and session history live in your user folder, so every account uses the same set. claude:// links and Claude in Chrome go to the main account. Claude’s own quick-entry hotkey goes to whichever copy started first.</p>
+        </details>
+        <details>
+          <summary>How much memory does each account use?</summary>
+          <p>Each open account is a full copy of Claude Desktop, so budget roughly one Claude per window. The switcher itself uses about 16 MB.</p>
+        </details>
+        <details>
+          <summary>How do I update?</summary>
+          <p>Run the new version. Your accounts and settings are kept. Claude itself updates once for every account; windows already open stay on the old version until restarted.</p>
+        </details>
+        <details>
+          <summary>I used Claude Code Desktop Switcher. Will my setup carry over?</summary>
+          <p>Yes. This is a C++ rewrite of <a href="https://github.com/PriyanshuGeTRekT/Claude-Code-Desktop-Switcher">the PowerShell script by @PriyanshuGeTRekT</a> that worked out the idea. The profile folders are the same, so accounts, names, colours and shortcuts carry straight over.</p>
+        </details>
+        <details>
+          <summary>Is this an official Anthropic app?</summary>
+          <p>No. It is an independent open-source project, not affiliated with, endorsed by or supported by Anthropic. Using several accounts is subject to <a href="https://www.anthropic.com/legal/consumer-terms">Anthropic’s terms</a>.</p>
+        </details>
       </div>
-    </section>
-
-    <!-- CTA: the next account, already being named -->
-    <section class="cta" id="download" aria-labelledby="cta-title">
-      <div class="cta__copy">
-        <h2 id="cta-title" class="display">Two sign&#8209;ins, one&nbsp;PC</h2>
-        <p>Download the exe and run it. It installs itself without admin rights and opens the picker, ready for Add. You need Windows 10 or 11 and Claude Desktop.</p>
-      </div>
-      <form class="cta__ui" data-get action="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe" method="get">
-        <div class="namecard" data-ui>
-          <span class="namecard__num">2</span>
-          <span class="namecard__av" data-initial>W</span>
-          <label class="namecard__label" for="acct-name">Rename (F2)</label>
-          <input class="namecard__field" id="acct-name" type="text" value="Work" maxlength="24" autocomplete="off" spellcheck="false">
-          <span class="namecard__status">Open</span>
-        </div>
-        <fieldset class="arch">
-          <legend class="sr-only">Build</legend>
-          <label><input type="radio" name="arch" value="x64" checked><span>x64, Intel and AMD</span></label>
-          <label><input type="radio" name="arch" value="arm64"><span>ARM64, Snapdragon</span></label>
-        </fieldset>
-        <button class="key key--dark key--wide" type="submit" data-get-label>Download for Windows</button>
-        <p class="cta__small small">Or see <a class="link-plain" href="https://github.com/Piwqust/claude-switcher/releases">all releases</a> and the <a class="link-plain" href="https://github.com/Piwqust/claude-switcher/blob/main/docs/guide.md">user guide</a>.</p>
-      </form>
     </section>
   </main>
 
   <footer class="foot">
-    <a class="word" href="#top" aria-label="Claude Profile Switcher, back to top">
-      <span data-reveal class="wk f1" style="--h:100%" data-l="S"></span><span data-reveal class="wk f4" style="--h:78%" data-l="w"></span><span data-reveal class="wk f2" style="--h:88%" data-l="i"></span><span data-reveal class="wk f5" style="--h:64%" data-l="t"></span><span data-reveal class="wk f3" style="--h:94%" data-l="c"></span><span data-reveal class="wk f1" style="--h:72%" data-l="h"></span><span data-reveal class="wk f4" style="--h:84%" data-l="e"></span><span data-reveal class="wk f2" style="--h:68%" data-l="r"></span>
-    </a>
+    <div class="foot__mark" aria-hidden="true"><img src="img/logo.png" width="256" height="256" alt=""></div>
     <div class="foot__cols">
-      <div><h3>Download</h3><ul><li><a class="link" href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe">Windows x64</a></li><li><a class="link" href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe">Windows ARM64</a></li><li><a class="link" href="https://github.com/Piwqust/claude-switcher/releases">All releases</a></li><li><a class="link" href="https://github.com/Piwqust/claude-switcher/blob/main/CHANGELOG.md">Changelog</a></li></ul></div>
-      <div><h3>Read</h3><ul><li><a class="link" href="https://github.com/Piwqust/claude-switcher/blob/main/docs/guide.md">User guide</a></li><li><a class="link" href="https://github.com/Piwqust/claude-switcher/blob/main/docs/how-it-works.md">How it works</a></li><li><a class="link" href="https://github.com/Piwqust/claude-switcher/blob/main/SECURITY.md">Security</a></li><li><a class="link" href="https://github.com/Piwqust/claude-switcher/blob/main/README.ru.md">По-русски</a></li></ul></div>
-      <div><h3>Source</h3><ul><li><a class="link" href="https://github.com/Piwqust/claude-switcher">GitHub</a></li><li><a class="link" href="https://github.com/Piwqust/claude-switcher/issues">Issues</a></li><li><a class="link" href="https://github.com/Piwqust/claude-switcher/blob/main/CONTRIBUTING.md">Contributing</a></li><li><a class="link" href="https://github.com/Piwqust/claude-switcher/blob/main/LICENSE">MIT licence</a></li></ul></div>
-      <p class="foot__legal">Unofficial: not affiliated with, endorsed by or supported by Anthropic. Claude is a trademark of Anthropic. Using several accounts is subject to <a class="link-plain" href="https://www.anthropic.com/legal/consumer-terms">Anthropic’s terms</a>. Thanks to @PriyanshuGeTRekT for the original.</p>
+      <div><p class="foot__h">Download</p><a href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-x64.exe">Windows x64</a><a href="https://github.com/Piwqust/claude-switcher/releases/latest/download/ClaudeProfileSwitcher-arm64.exe">Windows ARM64</a><a href="https://github.com/Piwqust/claude-switcher/releases">All releases</a><a href="https://github.com/Piwqust/claude-switcher/blob/main/CHANGELOG.md">Changelog</a></div>
+      <div><p class="foot__h">Docs</p><a href="https://github.com/Piwqust/claude-switcher/blob/main/docs/guide.md">User guide</a><a href="https://github.com/Piwqust/claude-switcher/blob/main/docs/how-it-works.md">How it works</a><a href="https://github.com/Piwqust/claude-switcher/blob/main/SECURITY.md">Security</a><a href="https://github.com/Piwqust/claude-switcher/blob/main/README.ru.md">По-русски</a></div>
+      <div><p class="foot__h">Source</p><a href="https://github.com/Piwqust/claude-switcher">GitHub <span aria-hidden="true">↗</span></a><a href="https://github.com/Piwqust/claude-switcher/issues">Issues <span aria-hidden="true">↗</span></a><a href="https://github.com/Piwqust/claude-switcher/blob/main/CONTRIBUTING.md">Contributing</a><a href="https://github.com/Piwqust/claude-switcher/blob/main/LICENSE">MIT licence</a></div>
+      <div><p class="foot__h">Thanks</p><a href="https://github.com/PriyanshuGeTRekT/Claude-Code-Desktop-Switcher">The original script <span aria-hidden="true">↗</span></a><a href="https://github.com/PriyanshuGeTRekT">@PriyanshuGeTRekT <span aria-hidden="true">↗</span></a></div>
     </div>
-    <div class="foot__last">
-      <p class="small">© 2026 Piwqust. MIT licence.</p>
-      <a class="key key--small" href="#download">Download</a>
+    <div class="foot__base">
+      <p>© 2026 Piwqust. Unofficial: not affiliated with, endorsed by or supported by Anthropic. Claude is a trademark of Anthropic.</p>
+      <a class="btn btn--light btn--sm" href="#download">Download</a>
     </div>
   </footer>
 
