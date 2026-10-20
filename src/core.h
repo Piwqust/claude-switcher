@@ -115,6 +115,7 @@ namespace Core {
     std::wstring ValidateName(const std::wstring& name, const std::wstring& exceptId = L"");
     Profile AddAccount();
     bool Start(const std::wstring& id);            // true when an open window was brought forward
+    bool Close(const std::wstring& id);            // ends Claude for good, tray included; false when it wasn't open
     void Restart(const std::wstring& id);          // ends the open window, if any, and starts it again
     Profile Rename(const Profile& p, const std::wstring& newName);
     void Delete(const Profile& p);                 // throws std::wstring on refusal

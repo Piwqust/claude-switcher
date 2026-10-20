@@ -8,7 +8,7 @@ struct Item {
     std::wstring name, letters;     // display name ("Main" for Default) and avatar initials
     COLORREF color = 0;
     int index = 0;                  // 1-based; the digit that opens it, for the first nine
-    bool launching = false, checked = false, autoOpen = false;
+    bool launching = false, closing = false, checked = false, autoOpen = false;
     ULONGLONG launchAt = 0;
     DWORD endingPid = 0;            // while restarting: the old window's pid, which still counts as starting
     bool running() const { return p.pid != 0; }
@@ -36,6 +36,7 @@ namespace App {
 
     void Launch(const std::vector<std::wstring>& ids, bool fromPicker);
     void Restart(const std::vector<std::wstring>& ids);
+    void Close(const std::vector<std::wstring>& ids);
     void AddAccount();
     void BeginRename(const std::wstring& id);
     void CommitRename(const std::wstring& id, const std::wstring& name);

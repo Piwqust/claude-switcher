@@ -54,7 +54,7 @@ Each card shows the account's number, its name, whether it is open or when it wa
 2. Sign in with your other account. From now on both stay signed in.
 3. Press <kbd>F2</kbd> to rename `Account 2` to something like "Work". Only the label changes; the sign-in is unaffected.
 
-The **⋯** menu on a card (or a right-click) has the rest: restart Claude, open it when Windows starts, a desktop shortcut, moving Code chats, the profile folder, and delete.
+The **⋯** menu on a card (or a right-click) has the rest: restart or close Claude, open it when Windows starts, a desktop shortcut, moving Code chats, the profile folder, and delete.
 
 <br clear="right">
 
@@ -96,10 +96,12 @@ With **Ask at sign-in** off, the ticked accounts open without asking.
 
 Closing the window leaves the switcher in the tray, where it uses about 20 MB of memory and opens instantly.
 
-- **Left-click** the icon for the account list with usage. Open accounts have a ⟳ button there that restarts them.
-- **Right-click** it for the standard Windows menu: accounts, Restart Claude, Add account…, Settings, Quit switcher.
+- **Left-click** the icon for the account list with usage. Open accounts have ⟳ there to restart them and ✕ to close them.
+- **Right-click** it for the standard Windows menu: accounts, Restart Claude, Close Claude, Add account…, Settings, Quit switcher.
 
 **Restart Claude** closes an open account's Claude completely and opens it again, for when it hangs or has to pick up new MCP servers or settings. Claude's own Quit only hides it to the tray, so the switcher ends the whole process, Claude Code chats running in it included; unsent text in that window is lost. With several accounts open, **All open** restarts them together.
+
+**Close Claude** ends it the same way without starting it again, so nothing of that account is left running, not even in the tray.
 
 If you would rather it quit with the window, turn off **Stay in the tray when closed** in Settings.
 
@@ -143,6 +145,7 @@ The switcher never asks Anthropic's servers for these numbers. Where they come f
 | `ClaudeProfileSwitcher.exe` | Opens the picker. Run from anywhere but its install folder, it installs itself first |
 | `ClaudeProfileSwitcher.exe --launch "Work"` | Opens an account, or brings its window forward, then exits. Takes a name or a profile folder |
 | `ClaudeProfileSwitcher.exe --restart "Work"` | Closes that account's Claude, opens it again, then exits. Opens it if it was closed |
+| `ClaudeProfileSwitcher.exe --close "Work"` | Closes that account's Claude completely, tray icon included, then exits |
 | `ClaudeProfileSwitcher.exe --add-account` | Adds an account and opens Claude at its sign-in screen |
 | `ClaudeProfileSwitcher.exe --tray` | Starts in the tray only |
 | `ClaudeProfileSwitcher.exe --startup` | What Windows runs at sign-in: the countdown or the picker |

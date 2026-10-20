@@ -5,7 +5,7 @@
 using namespace Gfx;
 
 namespace {
-    const float W = 320, RowH = 52;
+    const float W = 352, RowH = 52;
 
     struct FlyoutWin : Surface {
         ULONGLONG hiddenAt = 0;
@@ -64,17 +64,20 @@ namespace {
                 UINT id = Id("fo-row", it.index);
                 auto pid = it.p.id;
                 Row(id, y, [this, pid] { Hide(); App::Launch({ pid }, false); });
-                // An open account gets a restart button between its text and the shortcut digit.
-                bool restartable = it.running() && !it.launching;
-                float tw = restartable ? W - 140 : W - 110;
+                // An open account gets restart and close buttons between its text and the shortcut digit.
+                bool live = it.running() && !it.launching && !it.closing;
+                float tw = live ? W - 172 : W - 110;
                 Avatar(30, y + RowH / 2, 32, it.letters, it.color, it.p.isDefault, it.running(), T.dark ? Rgba(0x2C2C2C) : Rgba(0xF3F3F3));
                 Text(it.name, { 56, y + 8, tw, 20 }, Font(14, DWRITE_FONT_WEIGHT_SEMI_BOLD), T.text);
                 auto status = it.Status();
                 float sw = Measure(status, Font(12)).width;
-                Text(status, { 56, y + 27, tw, 18 }, Font(12), it.launching ? T.accentText : it.running() ? T.success : T.text2);
+                Text(status, { 56, y + 27, tw, 18 }, Font(12), it.launching || it.closing ? T.accentText : it.running() ? T.success : T.text2);
                 auto lim = Limits(it, tw - sw - 6);
                 if (!lim.empty()) Text(L"·  " + lim, { 56 + sw + 6, y + 27, tw - sw - 6, 18 }, Font(12), T.text3);
-                if (restartable) IconButton(Id("fo-restart", it.index), { W - 78, y + 10, 32, 32 }, Glyphs::Restart, [pid] { App::Restart({ pid }); });
+                if (live) {
+                    IconButton(Id("fo-restart", it.index), { W - 112, y + 10, 32, 32 }, Glyphs::Restart, [pid] { App::Restart({ pid }); });
+                    IconButton(Id("fo-close", it.index), { W - 78, y + 10, 32, 32 }, Glyphs::Clear, [pid] { App::Close({ pid }); });
+                }
                 if (it.index <= 9) {
                     RectF b{ W - 40, y + 16, 20, 20 };
                     Fill(b, T.badge, 4);

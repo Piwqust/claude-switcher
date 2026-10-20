@@ -576,11 +576,11 @@ namespace Core {
     }
 
     // Claude's own Quit only hides it to the tray, so the window's whole process tree is
-    // ended: the renderers and any Claude Code sessions it started go with it. Starting again
-    // has to wait until all of them are gone, or Electron's single instance lock would hand
-    // the new copy straight to the dying one.
-    void Restart(const std::wstring& id) {
-        if (Paths::Demo) return;
+    // ended: the renderers and any Claude Code sessions it started go with it. Returns once
+    // all of them are gone, so a restart isn't handed by Electron's single instance lock
+    // straight to the dying copy.
+    bool Close(const std::wstring& id) {
+        if (Paths::Demo) return false;
         auto key = Util::Lower(ProfilePath(id)); while (!key.empty() && key.back() == L'\\') key.pop_back();
         auto running = RunningMap();
         auto r = running.find(key);
@@ -621,7 +621,14 @@ namespace Core {
             for (size_t k = 0; k < ending.size(); k += MAXIMUM_WAIT_OBJECTS)
                 WaitForMultipleObjects((DWORD)std::min<size_t>(MAXIMUM_WAIT_OBJECTS, ending.size() - k), ending.data() + k, TRUE, 10000);
             for (HANDLE h : ending) CloseHandle(h);
+            return true;
         }
+        return false;
+    }
+
+    void Restart(const std::wstring& id) {
+        if (Paths::Demo) return;
+        Close(id);
         Start(id);
     }
 

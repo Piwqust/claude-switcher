@@ -8,6 +8,7 @@ Each version's section becomes the description of its GitHub release.
 ### New
 
 - **A restart button in the tray flyout** next to every open account.
+- **Close Claude for good**, tray icon included: ✕ in the tray flyout, Close Claude in the tray menu (one account or all open ones) and in a card's ⋯ menu, or `--close "Work"` on the command line.
 
 ## [1.0.1] — 2026-10-20
 

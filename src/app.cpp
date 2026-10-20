@@ -6,6 +6,7 @@
 
 std::wstring Item::Status() const {
     if (launching) return Tr(L"Starting…", L"Запускается…");
+    if (closing) return Tr(L"Closing…", L"Закрывается…");
     if (p.pid) return Tr(L"Open", L"Открыт");
     return Util::When(p.lastUsed);
 }
@@ -136,18 +137,22 @@ namespace App {
             auto label = i.name + (i.index <= 9 ? Util::Format(L"\tCtrl+Alt+%d", i.index) : L"");
             AppendMenuW(m, MF_STRING | (i.running() ? MF_CHECKED : 0), 100 + n++, label.c_str());
         }
-        // Restart: one entry per open account, and all of them at once when there are several.
+        // Restart and Close: one entry per open account, and all of them at once when there are several.
         std::vector<std::wstring> open;
-        HMENU restart = CreatePopupMenu();
-        for (size_t k = 0; k < items.size(); k++)
-            if (items[k].running()) { open.push_back(items[k].p.id); AppendMenuW(restart, MF_STRING, 200 + k, items[k].name.c_str()); }
-        if (open.size() > 1) {
-            AppendMenuW(restart, MF_SEPARATOR, 0, nullptr);
-            AppendMenuW(restart, MF_STRING, 5, Tr(L"All open", L"Все открытые"));
-        }
+        for (auto& i : items) if (i.running()) open.push_back(i.p.id);
         AppendMenuW(m, MF_SEPARATOR, 0, nullptr);
-        if (open.empty()) { DestroyMenu(restart); AppendMenuW(m, MF_STRING | MF_GRAYED, 0, Tr(L"Restart Claude", L"Перезапустить Claude")); }
-        else AppendMenuW(m, MF_POPUP, (UINT_PTR)restart, Tr(L"Restart Claude", L"Перезапустить Claude"));
+        auto perAccount = [&](UINT base, UINT all, const wchar_t* label) {
+            if (open.empty()) { AppendMenuW(m, MF_STRING | MF_GRAYED, 0, label); return; }
+            HMENU sub = CreatePopupMenu();
+            for (size_t k = 0; k < items.size(); k++) if (items[k].running()) AppendMenuW(sub, MF_STRING, base + k, items[k].name.c_str());
+            if (open.size() > 1) {
+                AppendMenuW(sub, MF_SEPARATOR, 0, nullptr);
+                AppendMenuW(sub, MF_STRING, all, Tr(L"All open", L"Все открытые"));
+            }
+            AppendMenuW(m, MF_POPUP, (UINT_PTR)sub, label);
+        };
+        perAccount(200, 5, Tr(L"Restart Claude", L"Перезапустить Claude"));
+        perAccount(300, 6, Tr(L"Close Claude", L"Закрыть Claude"));
         AppendMenuW(m, MF_SEPARATOR, 0, nullptr);
         AppendMenuW(m, MF_STRING, 1, Tr(L"Show accounts", L"Открыть окно выбора"));
         AppendMenuW(m, MF_STRING, 2, Tr(L"Add account…", L"Добавить аккаунт…"));
@@ -162,7 +167,9 @@ namespace App {
         DestroyMenu(m);
         if (cmd >= 100 && cmd - 100 < (int)items.size()) Launch({ items[cmd - 100].p.id }, false);
         else if (cmd >= 200 && cmd - 200 < (int)items.size()) Restart({ items[cmd - 200].p.id });
+        else if (cmd >= 300 && cmd - 300 < (int)items.size()) Close({ items[cmd - 300].p.id });
         else if (cmd == 5) Restart(open);
+        else if (cmd == 6) Close(open);
         else if (cmd == 1) ShowPicker();
         else if (cmd == 2) AddAccount();
         else if (cmd == 3) ShowSettings();
@@ -187,6 +194,7 @@ namespace App {
             it.index = (int)k + 1;
             it.autoOpen = autoSet.count(Util::Lower(it.p.id)) > 0;
             if (it.launching && ((it.p.pid && it.p.pid != it.endingPid) || now - it.launchAt > 20000)) { it.launching = false; it.endingPid = 0; }
+            if (it.closing && statusKnown && (!it.p.pid || now - it.launchAt > 20000)) it.closing = false;
             next.push_back(it);
         }
         items.swap(next);
@@ -240,7 +248,7 @@ namespace App {
 
     // ------------------------------------------------------------ actions
 
-    struct LaunchResult { std::vector<std::wstring> errors; };
+    struct LaunchResult { std::vector<std::wstring> errors; bool closing = false; };
 
     void Launch(const std::vector<std::wstring>& ids, bool fromPicker) {
         if (ids.empty()) return;
@@ -269,6 +277,21 @@ namespace App {
                 try { Core::Restart(id); }
                 catch (const std::wstring& e) { r->errors.push_back(e); Core::Log(e); }
                 catch (...) { r->errors.push_back(Util::Format(Tr(L"Couldn't restart %s", L"Не удалось перезапустить %s"), Util::Q(id).c_str())); }
+            }
+            if (!PostMessageW(tray, WM_LAUNCHED, 0, (LPARAM)r)) delete r;
+        }).detach();
+    }
+
+    void Close(const std::vector<std::wstring>& ids) {
+        if (ids.empty()) return;
+        for (auto& id : ids) if (auto it = Find(id)) if (it->running()) { it->closing = true; it->launchAt = GetTickCount64(); }
+        RedrawAll();
+        std::thread([ids] {
+            auto r = new LaunchResult(); r->closing = true;
+            for (auto& id : ids) {
+                try { Core::Close(id); }
+                catch (const std::wstring& e) { r->errors.push_back(e); Core::Log(e); }
+                catch (...) { r->errors.push_back(Util::Format(Tr(L"Couldn't close %s", L"Не удалось закрыть %s"), Util::Q(id).c_str())); }
             }
             if (!PostMessageW(tray, WM_LAUNCHED, 0, (LPARAM)r)) delete r;
         }).detach();
@@ -354,6 +377,7 @@ namespace App {
         auto key = it->index <= 9 ? Util::Format(L"\t%d", it->index) : L"";
         AppendMenuW(m, MF_STRING, 1, ((it->running() ? Tr(L"Switch to window", L"Перейти к окну") : Tr(L"Open", L"Открыть")) + key).c_str());
         AppendMenuW(m, MF_STRING | (it->running() ? 0 : MF_GRAYED), 8, Tr(L"Restart\tCtrl+R", L"Перезапустить\tCtrl+R"));
+        AppendMenuW(m, MF_STRING | (it->running() ? 0 : MF_GRAYED), 9, Tr(L"Close Claude", L"Закрыть Claude"));
         AppendMenuW(m, MF_STRING | (it->autoOpen ? MF_CHECKED : 0), 2, Tr(L"Open when Windows starts", L"Открывать при входе в Windows"));
         AppendMenuW(m, MF_SEPARATOR, 0, nullptr);
         AppendMenuW(m, MF_STRING, 3, Tr(L"Rename\tF2", L"Переименовать\tF2"));
@@ -382,6 +406,7 @@ namespace App {
             break;
         case 7: Delete(id, owner); break;
         case 8: Restart({ id }); break;
+        case 9: Close({ id }); break;
         }
     }
 
@@ -415,9 +440,10 @@ namespace App {
         case WM_LAUNCHED: {
             auto r = (LaunchResult*)l;
             if (!r->errors.empty()) {
-                for (auto& i : items) i.launching = false;
-                if (Picker::Visible()) Dialogs::Info(Picker::Handle(), Tr(L"Couldn't open Claude", L"Не удалось открыть Claude"), r->errors[0]);
-                else Notify(Tr(L"Couldn't open Claude", L"Не удалось открыть Claude"), r->errors[0], true);
+                for (auto& i : items) i.launching = i.closing = false;
+                auto title = r->closing ? Tr(L"Couldn't close Claude", L"Не удалось закрыть Claude") : Tr(L"Couldn't open Claude", L"Не удалось открыть Claude");
+                if (Picker::Visible()) Dialogs::Info(Picker::Handle(), title, r->errors[0]);
+                else Notify(title, r->errors[0], true);
             }
             delete r;
             Refresh();
@@ -450,11 +476,11 @@ namespace App {
         case WM_TIMER:
             if (w == TimerRefresh) {
                 bool busy = Picker::Visible() || Flyout::Visible() || SettingsWin::Visible();
-                for (auto& i : items) busy |= i.launching;
+                for (auto& i : items) busy |= i.launching || i.closing;
                 if (busy) Refresh();
             } else if (w == TimerSoon) {
                 KillTimer(h, TimerSoon);
-                bool pending = false; for (auto& i : items) pending |= i.launching;
+                bool pending = false; for (auto& i : items) pending |= i.launching || i.closing;
                 Refresh();
                 if (pending) SetTimer(h, TimerSoon, 3000, nullptr);
             } else if (w == TimerHide) {
