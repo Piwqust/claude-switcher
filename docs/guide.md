@@ -96,7 +96,7 @@ With **Ask at sign-in** off, the ticked accounts open without asking.
 
 Closing the window leaves the switcher in the tray, where it uses about 20 MB of memory and opens instantly.
 
-- **Left-click** the icon for the account list with usage.
+- **Left-click** the icon for the account list with usage. Open accounts have a ⟳ button there that restarts them.
 - **Right-click** it for the standard Windows menu: accounts, Restart Claude, Add account…, Settings, Quit switcher.
 
 **Restart Claude** closes an open account's Claude completely and opens it again, for when it hangs or has to pick up new MCP servers or settings. Claude's own Quit only hides it to the tray, so the switcher ends the whole process, Claude Code chats running in it included; unsent text in that window is lost. With several accounts open, **All open** restarts them together.

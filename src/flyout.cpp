@@ -28,16 +28,17 @@ namespace {
         }
 
         // "5 ч 40% · 7 дн 12% · в 07:42": limits with the time they were taken.
-        std::wstring Limits(const Item& it) {
+        std::wstring Limits(const Item& it, float maxW) {
             auto& u = it.p.usage;
             if (!u.known || (u.fiveHour < 0 && u.week < 0)) return L"";
             std::wstring s = Tr(L"5 h ", L"5 ч ");
             s += u.fiveHour >= 0 ? Util::Format(L"%d%%", (int)std::lround(u.fiveHour)) : L"—";
             s += Tr(L" · 7 d ", L" · 7 дн ");
             s += u.week >= 0 ? Util::Format(L"%d%%", (int)std::lround(u.week)) : L"—";
-            // The row is narrow: the time fits when it is today's, older dates are on the card.
+            // The row is narrow: the time goes only when it fits whole, older dates and the rest are on the card.
             auto age = Core::Age(u.newest());
-            return age.find(L',') == std::wstring::npos ? s + L" · " + age : s;
+            auto withAge = s + L" · " + age;
+            return age.find(L',') == std::wstring::npos && Measure(L"·  " + withAge, Font(12)).width <= maxW ? withAge : s;
         }
 
         void Row(UINT id, float y, std::function<void()> click) {
@@ -63,13 +64,17 @@ namespace {
                 UINT id = Id("fo-row", it.index);
                 auto pid = it.p.id;
                 Row(id, y, [this, pid] { Hide(); App::Launch({ pid }, false); });
+                // An open account gets a restart button between its text and the shortcut digit.
+                bool restartable = it.running() && !it.launching;
+                float tw = restartable ? W - 140 : W - 110;
                 Avatar(30, y + RowH / 2, 32, it.letters, it.color, it.p.isDefault, it.running(), T.dark ? Rgba(0x2C2C2C) : Rgba(0xF3F3F3));
-                Text(it.name, { 56, y + 8, W - 110, 20 }, Font(14, DWRITE_FONT_WEIGHT_SEMI_BOLD), T.text);
+                Text(it.name, { 56, y + 8, tw, 20 }, Font(14, DWRITE_FONT_WEIGHT_SEMI_BOLD), T.text);
                 auto status = it.Status();
                 float sw = Measure(status, Font(12)).width;
-                Text(status, { 56, y + 27, W - 110, 18 }, Font(12), it.launching ? T.accentText : it.running() ? T.success : T.text2);
-                auto lim = Limits(it);
-                if (!lim.empty()) Text(L"·  " + lim, { 56 + sw + 6, y + 27, W - 110 - sw - 6, 18 }, Font(12), T.text3);
+                Text(status, { 56, y + 27, tw, 18 }, Font(12), it.launching ? T.accentText : it.running() ? T.success : T.text2);
+                auto lim = Limits(it, tw - sw - 6);
+                if (!lim.empty()) Text(L"·  " + lim, { 56 + sw + 6, y + 27, tw - sw - 6, 18 }, Font(12), T.text3);
+                if (restartable) IconButton(Id("fo-restart", it.index), { W - 78, y + 10, 32, 32 }, Glyphs::Restart, [pid] { App::Restart({ pid }); });
                 if (it.index <= 9) {
                     RectF b{ W - 40, y + 16, 20, 20 };
                     Fill(b, T.badge, 4);

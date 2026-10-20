@@ -5,6 +5,10 @@ Each version's section becomes the description of its GitHub release.
 
 ## [Unreleased]
 
+### New
+
+- **A restart button in the tray flyout** next to every open account.
+
 ## [1.0.1] — 2026-10-20
 
 ### New

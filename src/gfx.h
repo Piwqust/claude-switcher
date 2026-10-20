@@ -163,4 +163,5 @@ namespace Glyphs {
     constexpr const wchar_t* Pin = L"";
     constexpr const wchar_t* Clear = L"";
     constexpr const wchar_t* Keyboard = L"";
+    constexpr const wchar_t* Restart = L"";
 }
