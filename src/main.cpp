@@ -3,6 +3,7 @@
     ClaudeProfileSwitcher.exe --startup       what Windows runs at sign-in
     ClaudeProfileSwitcher.exe --tray          start in the notification area only
     ClaudeProfileSwitcher.exe --launch Work   open an account, or bring it forward, then exit
+    ClaudeProfileSwitcher.exe --restart Work  close an account's Claude and open it again, then exit
     ClaudeProfileSwitcher.exe --add-account   add an account (in the running switcher if there is one)
     ClaudeProfileSwitcher.exe --install       install or refresh the install, then open the picker
     ClaudeProfileSwitcher.exe --claude-path <exe>   point at Claude.exe if detection fails (remembered)
@@ -61,6 +62,15 @@ static int Run() {
         Profile p;
         if (!Core::Resolve(launch, p)) throw Util::Format(Tr(L"There is no account called %s", L"Аккаунта %s нет"), Util::Q(launch).c_str());
         Core::Start(p.id);
+        return 0;
+    }
+
+    auto restart = arg(L"--restart");
+    if (!restart.empty()) {
+        if (!EnsureClaude(true)) return 1;
+        Profile p;
+        if (!Core::Resolve(restart, p)) throw Util::Format(Tr(L"There is no account called %s", L"Аккаунта %s нет"), Util::Q(restart).c_str());
+        Core::Restart(p.id);
         return 0;
     }
 

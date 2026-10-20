@@ -136,6 +136,18 @@ namespace App {
             auto label = i.name + (i.index <= 9 ? Util::Format(L"\tCtrl+Alt+%d", i.index) : L"");
             AppendMenuW(m, MF_STRING | (i.running() ? MF_CHECKED : 0), 100 + n++, label.c_str());
         }
+        // Restart: one entry per open account, and all of them at once when there are several.
+        std::vector<std::wstring> open;
+        HMENU restart = CreatePopupMenu();
+        for (size_t k = 0; k < items.size(); k++)
+            if (items[k].running()) { open.push_back(items[k].p.id); AppendMenuW(restart, MF_STRING, 200 + k, items[k].name.c_str()); }
+        if (open.size() > 1) {
+            AppendMenuW(restart, MF_SEPARATOR, 0, nullptr);
+            AppendMenuW(restart, MF_STRING, 5, Tr(L"All open", L"Все открытые"));
+        }
+        AppendMenuW(m, MF_SEPARATOR, 0, nullptr);
+        if (open.empty()) { DestroyMenu(restart); AppendMenuW(m, MF_STRING | MF_GRAYED, 0, Tr(L"Restart Claude", L"Перезапустить Claude")); }
+        else AppendMenuW(m, MF_POPUP, (UINT_PTR)restart, Tr(L"Restart Claude", L"Перезапустить Claude"));
         AppendMenuW(m, MF_SEPARATOR, 0, nullptr);
         AppendMenuW(m, MF_STRING, 1, Tr(L"Show accounts", L"Открыть окно выбора"));
         AppendMenuW(m, MF_STRING, 2, Tr(L"Add account…", L"Добавить аккаунт…"));
@@ -149,6 +161,8 @@ namespace App {
         PostMessageW(tray, WM_NULL, 0, 0);
         DestroyMenu(m);
         if (cmd >= 100 && cmd - 100 < (int)items.size()) Launch({ items[cmd - 100].p.id }, false);
+        else if (cmd >= 200 && cmd - 200 < (int)items.size()) Restart({ items[cmd - 200].p.id });
+        else if (cmd == 5) Restart(open);
         else if (cmd == 1) ShowPicker();
         else if (cmd == 2) AddAccount();
         else if (cmd == 3) ShowSettings();
@@ -172,7 +186,7 @@ namespace App {
             it.color = it.p.isDefault ? RGB(217, 119, 87) : Core::ProfileColor(it.p.id);
             it.index = (int)k + 1;
             it.autoOpen = autoSet.count(Util::Lower(it.p.id)) > 0;
-            if (it.launching && (it.p.pid || now - it.launchAt > 20000)) it.launching = false;
+            if (it.launching && ((it.p.pid && it.p.pid != it.endingPid) || now - it.launchAt > 20000)) { it.launching = false; it.endingPid = 0; }
             next.push_back(it);
         }
         items.swap(next);
@@ -243,6 +257,21 @@ namespace App {
         }).detach();
         // A moment for the card to show it is starting, then out of the way.
         if (fromPicker && HideAfterLaunch()) SetTimer(tray, TimerHide, 450, nullptr);
+    }
+
+    void Restart(const std::vector<std::wstring>& ids) {
+        if (ids.empty()) return;
+        for (auto& id : ids) if (auto it = Find(id)) { it->launching = true; it->launchAt = GetTickCount64(); it->endingPid = it->p.pid; }
+        RedrawAll();
+        std::thread([ids] {
+            auto r = new LaunchResult();
+            for (auto& id : ids) {
+                try { Core::Restart(id); }
+                catch (const std::wstring& e) { r->errors.push_back(e); Core::Log(e); }
+                catch (...) { r->errors.push_back(Util::Format(Tr(L"Couldn't restart %s", L"Не удалось перезапустить %s"), Util::Q(id).c_str())); }
+            }
+            if (!PostMessageW(tray, WM_LAUNCHED, 0, (LPARAM)r)) delete r;
+        }).detach();
     }
 
     void AddAccount() {
@@ -324,6 +353,7 @@ namespace App {
         HMENU m = CreatePopupMenu();
         auto key = it->index <= 9 ? Util::Format(L"\t%d", it->index) : L"";
         AppendMenuW(m, MF_STRING, 1, ((it->running() ? Tr(L"Switch to window", L"Перейти к окну") : Tr(L"Open", L"Открыть")) + key).c_str());
+        AppendMenuW(m, MF_STRING | (it->running() ? 0 : MF_GRAYED), 8, Tr(L"Restart\tCtrl+R", L"Перезапустить\tCtrl+R"));
         AppendMenuW(m, MF_STRING | (it->autoOpen ? MF_CHECKED : 0), 2, Tr(L"Open when Windows starts", L"Открывать при входе в Windows"));
         AppendMenuW(m, MF_SEPARATOR, 0, nullptr);
         AppendMenuW(m, MF_STRING, 3, Tr(L"Rename\tF2", L"Переименовать\tF2"));
@@ -351,6 +381,7 @@ namespace App {
             else Dialogs::Info(owner, Tr(L"No folder yet", L"Папки пока нет"), Tr(L"It appears when the account is opened for the first time", L"Она появится, когда аккаунт откроется в первый раз"));
             break;
         case 7: Delete(id, owner); break;
+        case 8: Restart({ id }); break;
         }
     }
 

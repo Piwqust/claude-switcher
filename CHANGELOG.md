@@ -5,6 +5,14 @@ Each version's section becomes the description of its GitHub release.
 
 ## [Unreleased]
 
+### New
+
+- **Restart Claude** in one click: from the tray menu (one account or all open ones), from a card's ⋯ menu, with <kbd>Ctrl</kbd>+<kbd>R</kbd> on a card, or `--restart "Work"` on the command line. It ends the account's whole Claude process, Claude Code chats included, and opens it again.
+
+### Fixed
+
+- An account started with `"--user-data-dir=…"` quoted as a whole was not recognised as open.
+
 ## [1.0.0] — 2026-10-16
 
 The first release. Claude Profile Switcher is built on [Claude Code Desktop Switcher](https://github.com/PriyanshuGeTRekT/Claude-Code-Desktop-Switcher) 2.0 by @PriyanshuGeTRekT, a PowerShell script, and rewrites it from scratch as a native C++ app. Accounts, names, colours and shortcuts from that switcher carry over: just run the new exe.

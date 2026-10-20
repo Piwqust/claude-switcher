@@ -414,9 +414,12 @@ namespace Core {
     static std::wstring UserDataDir(const std::wstring& cmd) {
         auto i = cmd.find(L"--user-data-dir=");
         if (i == std::wstring::npos) return L"";
+        // Either --user-data-dir="C:\x y" or, as some launches pass it on, "--user-data-dir=C:\x y".
+        bool wholeQuoted = i > 0 && cmd[i - 1] == L'"';
         i += 16;
         std::wstring v;
-        if (i < cmd.size() && cmd[i] == L'"') { auto e = cmd.find(L'"', i + 1); v = cmd.substr(i + 1, e == std::wstring::npos ? std::wstring::npos : e - i - 1); }
+        if (wholeQuoted) { auto e = cmd.find(L'"', i); v = cmd.substr(i, e == std::wstring::npos ? std::wstring::npos : e - i); }
+        else if (i < cmd.size() && cmd[i] == L'"') { auto e = cmd.find(L'"', i + 1); v = cmd.substr(i + 1, e == std::wstring::npos ? std::wstring::npos : e - i - 1); }
         else { auto e = cmd.find(L' ', i); v = cmd.substr(i, e == std::wstring::npos ? std::wstring::npos : e - i); }
         while (!v.empty() && v.back() == L'\\') v.pop_back();
         return v;
@@ -570,6 +573,56 @@ namespace Core {
         sei.lpFile = file.c_str(); sei.lpParameters = args.c_str(); sei.lpDirectory = dir.c_str();
         if (!ShellExecuteExW(&sei)) throw Util::Format(Tr(L"Couldn't start Claude (code %lu)", L"Не удалось запустить Claude (код %lu)"), GetLastError());
         return open;
+    }
+
+    // Claude's own Quit only hides it to the tray, so the window's whole process tree is
+    // ended: the renderers and any Claude Code sessions it started go with it. Starting again
+    // has to wait until all of them are gone, or Electron's single instance lock would hand
+    // the new copy straight to the dying one.
+    void Restart(const std::wstring& id) {
+        if (Paths::Demo) return;
+        auto key = Util::Lower(ProfilePath(id)); while (!key.empty() && key.back() == L'\\') key.pop_back();
+        auto running = RunningMap();
+        auto r = running.find(key);
+        if (r != running.end()) {
+            std::vector<DWORD> tree{ r->second };
+            HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+            if (snap != INVALID_HANDLE_VALUE) {
+                std::vector<PROCESSENTRY32W> all;
+                PROCESSENTRY32W pe{ sizeof pe };
+                for (BOOL ok = Process32FirstW(snap, &pe); ok; ok = Process32NextW(snap, &pe)) all.push_back(pe);
+                CloseHandle(snap);
+                // A parent id can outlive its process and be reused, so a child counts only if
+                // it was created after the process it claims as its parent.
+                auto created = [](DWORD pid) -> ULONGLONG {
+                    HANDLE h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+                    if (!h) return 0;
+                    FILETIME c, e, k, u; ULONGLONG t = 0;
+                    if (GetProcessTimes(h, &c, &e, &k, &u)) t = ((ULONGLONG)c.dwHighDateTime << 32) | c.dwLowDateTime;
+                    CloseHandle(h);
+                    return t;
+                };
+                for (size_t k = 0; k < tree.size(); k++) {
+                    auto parentAt = created(tree[k]);
+                    for (auto& p : all) {
+                        if (p.th32ParentProcessID != tree[k] || p.th32ProcessID == tree[k] || std::find(tree.begin(), tree.end(), p.th32ProcessID) != tree.end()) continue;
+                        auto at = created(p.th32ProcessID);
+                        if (parentAt && at && at >= parentAt) tree.push_back(p.th32ProcessID);
+                    }
+                }
+            }
+            std::vector<HANDLE> ending;
+            for (DWORD pid : tree) {
+                HANDLE h = OpenProcess(PROCESS_TERMINATE | SYNCHRONIZE, FALSE, pid);
+                if (!h) continue;
+                if (TerminateProcess(h, 0)) ending.push_back(h); else CloseHandle(h);
+            }
+            if (ending.empty()) throw Util::Format(Tr(L"Couldn't close Claude (code %lu)", L"Не удалось закрыть Claude (код %lu)"), GetLastError());
+            for (size_t k = 0; k < ending.size(); k += MAXIMUM_WAIT_OBJECTS)
+                WaitForMultipleObjects((DWORD)std::min<size_t>(MAXIMUM_WAIT_OBJECTS, ending.size() - k), ending.data() + k, TRUE, 10000);
+            for (HANDLE h : ending) CloseHandle(h);
+        }
+        Start(id);
     }
 
     static void SetLabel(const std::wstring& id, const std::wstring& label) {

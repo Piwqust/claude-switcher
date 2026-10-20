@@ -266,6 +266,7 @@ namespace {
             if (!focused) return false;
             if (vk == VK_SPACE) { focused->checked = !focused->checked; Invalidate(); return true; }
             if (vk == VK_F2) { App::BeginRename(focused->p.id); return true; }
+            if (ctrl && vk == 'R' && focused->running()) { App::Restart({ focused->p.id }); return true; }
             if (vk == VK_DELETE) { App::Delete(focused->p.id, hwnd); return true; }
             if (vk == VK_APPS || (vk == VK_F10 && (GetKeyState(VK_SHIFT) & 0x8000))) {
                 auto t = TileRect(focused->index);
