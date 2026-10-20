@@ -5,6 +5,8 @@ Each version's section becomes the description of its GitHub release.
 
 ## [Unreleased]
 
+## [1.0.1] — 2026-10-20
+
 ### New
 
 - **Restart Claude** in one click: from the tray menu (one account or all open ones), from a card's ⋯ menu, with <kbd>Ctrl</kbd>+<kbd>R</kbd> on a card, or `--restart "Work"` on the command line. It ends the account's whole Claude process, Claude Code chats included, and opens it again.
@@ -44,5 +46,6 @@ The first release. Claude Profile Switcher is built on [Claude Code Desktop Swit
 - Start with Windows uses `HKCU\…\Run` instead of a shortcut in the Startup folder. The old shortcut is removed.
 - Messages appear as notifications and dialogs instead of a status line at the bottom of the window.
 
-[Unreleased]: https://github.com/Piwqust/claude-switcher/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Piwqust/claude-switcher/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/Piwqust/claude-switcher/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/Piwqust/claude-switcher/releases/tag/v1.0.0
