@@ -611,16 +611,36 @@ namespace Core {
                     }
                 }
             }
-            std::vector<HANDLE> ending;
+            // Ending a few hundred processes at once (MCP servers and their consoles) stalls
+            // Explorer and the screen for a second or more. So the tree is frozen first, which
+            // also keeps the dying copy from starting children again, then ended at idle
+            // priority a batch at a time: measured on 300 processes, 40 ms of stall, not 800.
+            typedef NTSTATUS(NTAPI* Fn)(HANDLE);
+            static Fn suspend = (Fn)GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtSuspendProcess");
+            static Fn resume = (Fn)GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtResumeProcess");
+            std::vector<HANDLE> hs;
             for (DWORD pid : tree) {
-                HANDLE h = OpenProcess(PROCESS_TERMINATE | SYNCHRONIZE, FALSE, pid);
+                HANDLE h = OpenProcess(PROCESS_TERMINATE | PROCESS_SUSPEND_RESUME | PROCESS_SET_INFORMATION | SYNCHRONIZE, FALSE, pid);
+                if (!h) h = OpenProcess(PROCESS_TERMINATE | SYNCHRONIZE, FALSE, pid);
                 if (!h) continue;
-                if (TerminateProcess(h, 0)) ending.push_back(h); else CloseHandle(h);
+                if (suspend) suspend(h);
+                SetPriorityClass(h, IDLE_PRIORITY_CLASS);
+                hs.push_back(h);
             }
-            if (ending.empty()) throw Util::Format(Tr(L"Couldn't close Claude (code %lu)", L"Не удалось закрыть Claude (код %lu)"), GetLastError());
-            for (size_t k = 0; k < ending.size(); k += MAXIMUM_WAIT_OBJECTS)
-                WaitForMultipleObjects((DWORD)std::min<size_t>(MAXIMUM_WAIT_OBJECTS, ending.size() - k), ending.data() + k, TRUE, 10000);
-            for (HANDLE h : ending) CloseHandle(h);
+            size_t ended = 0; DWORD err = ERROR_ACCESS_DENIED;
+            auto deadline = GetTickCount64() + 10000;
+            for (size_t k = 0; k < hs.size(); k += 16) {
+                std::vector<HANDLE> ending;
+                for (size_t j = k; j < std::min<size_t>(hs.size(), k + 16); j++) {
+                    if (TerminateProcess(hs[j], 0)) ending.push_back(hs[j]);
+                    else { err = GetLastError(); if (resume) resume(hs[j]); }
+                }
+                auto now = GetTickCount64();
+                if (!ending.empty()) WaitForMultipleObjects((DWORD)ending.size(), ending.data(), TRUE, now < deadline ? (DWORD)(deadline - now) : 0);
+                ended += ending.size();
+            }
+            for (HANDLE h : hs) CloseHandle(h);
+            if (!ended) throw Util::Format(Tr(L"Couldn't close Claude (code %lu)", L"Не удалось закрыть Claude (код %lu)"), err);
             return true;
         }
         return false;

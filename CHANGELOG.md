@@ -5,6 +5,10 @@ Each version's section becomes the description of its GitHub release.
 
 ## [Unreleased]
 
+### Fixed
+
+- Restarting or closing Claude no longer freezes Windows for a couple of seconds when Claude has many MCP servers running. The processes are now ended a few at a time instead of all at once.
+
 ## [1.0.2] — 2026-10-20
 
 ### New
