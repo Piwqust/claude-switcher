@@ -133,6 +133,13 @@ namespace Core {
     void SetAutostart(bool on);
     void Install();
 
+    // claude:// links, the end of a sign-in in the browser among them. Windows gives them to
+    // the Store package unless the person picks the switcher for them, once, in Settings.
+    void RegisterLinks();                          // offers the switcher to Windows for claude://
+    bool LinksRouted();                            // it was picked: links reach the right account
+    void ChooseLinkHandler();                      // opens Windows Settings where it is picked
+    void OpenLink(const std::wstring& url);        // to the account whose window was used last
+
     std::vector<CodeSession> CodeSessions(const Profile& p);
     std::wstring CodeSessionStore(const Profile& p);
     bool CopyCodeSession(const CodeSession& s, const std::wstring& store);

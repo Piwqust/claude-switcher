@@ -7,6 +7,7 @@ Each version's section becomes the description of its GitHub release.
 
 ### Fixed
 
+- **Signing in to an extra account with Google or single sign-on now comes back to that account**, not to the main one. Windows sends `claude://` links to the Store package, so the switcher can now handle them instead: choose it once in Settings → Sign-in and links (adding an account offers this too), and each link goes to the account whose window you used last.
 - Restarting or closing Claude no longer freezes Windows for a couple of seconds when Claude has many MCP servers running. The processes are now ended a few at a time instead of all at once.
 
 ## [1.0.2] — 2026-10-20

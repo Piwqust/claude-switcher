@@ -298,6 +298,18 @@ namespace App {
     }
 
     void AddAccount() {
+        // Asked once: the new account's sign-in may finish in the browser, and that only comes
+        // back to it once the switcher handles claude:// links.
+        if (!Paths::Demo && !Settings::Flag(L"LinksAsked", false) && !Core::LinksRouted()) {
+            Settings::Set(L"LinksAsked", true);
+            if (Dialogs::Ask(Owner(nullptr), Tr(L"Let sign-in come back to this account", L"Чтобы вход вернулся в этот аккаунт"),
+                             Tr(L"Signing in with Google or single sign-on finishes in the browser, and Windows sends the way back to the main account. "
+                                L"In the Settings page that opens, choose Claude Profile Switcher for CLAUDE: then it comes back to the account you started it in. This is needed once.",
+                                L"Вход через Google или единый вход завершается в браузере, и Windows отправляет возврат в основной аккаунт. "
+                                L"В открывшихся параметрах выберите Claude Profile Switcher для CLAUDE: тогда вход вернётся в тот аккаунт, из которого начат. Это нужно один раз."),
+                             Tr(L"Open Settings", L"Открыть параметры"), false, Tr(L"Not now", L"Не сейчас")))
+                Core::ChooseLinkHandler();
+        }
         std::thread([] {
             Profile* p = nullptr;
             try { p = new Profile(Core::AddAccount()); } catch (...) {}

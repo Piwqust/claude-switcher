@@ -10,6 +10,8 @@ namespace {
         bool recording = false;
         std::wstring hotkeyNote;
         bool hotkeyNoteBad = false;
+        bool links = false;
+        ULONGLONG linksAt = 0;
 
         void Start() {
             backdrop = 2;
@@ -126,6 +128,23 @@ namespace {
             {
                 float h = Card(y, Tr(L"      Accounts on the taskbar", L"      Аккаунты на панели задач"), Tr(L"      Pin the switcher to the taskbar: right-click it to see every account", L"      Закрепите переключатель на панели задач: правый клик по нему покажет все аккаунты"), 0);
                 Glyph(Glyphs::Pin, { Pad + 12, y + h / 2 - 12, 24, 24 }, 16, T.text2);
+                y += h + 4;
+            }
+
+            // ---------------------------------------------------------------- links
+            y += Section(y, Tr(L"Sign-in and links", L"Вход и ссылки"));
+            {
+                // Asking Windows is a COM call, too slow for every frame of an animation.
+                if (GetTickCount64() - linksAt > 1000) { links = Core::LinksRouted(); linksAt = GetTickCount64(); }
+                float h = Card(y, Tr(L"claude:// links go to the right account", L"Ссылки claude:// — в нужный аккаунт"),
+                               links ? Tr(L"On. A sign-in finished in the browser comes back to the account you started it in",
+                                          L"Включено. Вход, завершённый в браузере, вернётся в тот аккаунт, из которого он начат")
+                                     : Tr(L"Without it, signing in with Google or single sign-on in an extra account comes back to the main one. Choose Claude Profile Switcher for CLAUDE in Windows Settings",
+                                          L"Без этого вход через Google или единый вход в дополнительном аккаунте возвращается в основной. Выберите Claude Profile Switcher для CLAUDE в параметрах Windows"),
+                               150);
+                Button(Id("links"), { w - Pad - 16 - 150, y + h / 2 - 16, 150, 32 }, links ? Tr(L"Change", L"Изменить") : Tr(L"Choose", L"Выбрать"), false, [this] {
+                    Core::ChooseLinkHandler(); linksAt = 0;
+                });
                 y += h + 4;
             }
 

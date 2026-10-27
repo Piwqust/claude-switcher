@@ -72,6 +72,49 @@ using namespace Gfx;
         Settings::Set(L"Autostart", on);
     }
 
+    // ============================================================ claude:// links
+
+    // Claude registers claude:// in HKCU\Software\Classes on every start, but Windows gives
+    // the links to the Store package's own registration all the same, so a sign-in finished
+    // in the browser came back to the main account. Windows lets only the person change that,
+    // so the switcher just offers itself as a handler; Claude's own key is left alone.
+    static const wchar_t* LinkProgId = L"ClaudeProfileSwitcher.Link";
+    static const wchar_t* LinkCaps = L"Software\\ClaudeProfileSwitcher\\Capabilities";
+
+    static void RegStr(const std::wstring& key, const wchar_t* name, const std::wstring& value) {
+        RegSetKeyValueW(HKEY_CURRENT_USER, key.c_str(), name, REG_SZ, value.c_str(), (DWORD)((value.size() + 1) * sizeof(wchar_t)));
+    }
+
+    void RegisterLinks() {
+        if (Paths::Demo) return;
+        auto exe = Paths::Launcher();
+        auto cls = std::wstring(L"Software\\Classes\\") + LinkProgId;
+        RegStr(cls, nullptr, L"URL:Claude");
+        RegStr(cls + L"\\DefaultIcon", nullptr, L"\"" + exe + L"\",0");
+        RegStr(cls + L"\\shell\\open\\command", nullptr, L"\"" + exe + L"\" --open-link \"%1\"");
+        RegStr(LinkCaps, L"ApplicationName", RunValue);
+        RegStr(LinkCaps, L"ApplicationDescription", Tr(L"Opens claude:// links in the Claude account you used last", L"Открывает ссылки claude:// в аккаунте Claude, которым вы пользовались последним"));
+        RegStr(std::wstring(LinkCaps) + L"\\URLAssociations", L"claude", LinkProgId);
+        RegStr(L"Software\\RegisteredApplications", RunValue, LinkCaps);
+    }
+
+    bool LinksRouted() {
+        if (Paths::Demo) return false;
+        IApplicationAssociationRegistration* r = nullptr;
+        if (FAILED(CoCreateInstance(CLSID_ApplicationAssociationRegistration, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&r)))) return false;
+        LPWSTR prog = nullptr; bool ours = false;
+        if (SUCCEEDED(r->QueryCurrentDefault(L"claude", AT_URLPROTOCOL, AL_EFFECTIVE, &prog))) { ours = _wcsicmp(prog, LinkProgId) == 0; CoTaskMemFree(prog); }
+        r->Release();
+        return ours;
+    }
+
+    void ChooseLinkHandler() {
+        RegisterLinks();
+        // Windows 11 opens straight at the switcher's link types; older builds ignore the query
+        // and show Default apps, where CLAUDE is under the link types.
+        ShellExecuteW(nullptr, L"open", L"ms-settings:defaultapps?registeredAppUser=Claude%20Profile%20Switcher", nullptr, nullptr, SW_SHOWNORMAL);
+    }
+
     // ============================================================ install
 
     // Closes a running switcher, whichever version: the .NET ones listen for the exit
@@ -120,6 +163,7 @@ using namespace Gfx;
             for (auto& dir : { Paths::Desktop(), Paths::StartMenu() })
                 if (Util::Exists(dir + L"\\Claude - " + p.name + L".lnk")) CreateProfileShortcut(p, dir);
         SetAutostart(Settings::Flag(L"Autostart", true));
+        RegisterLinks();
         // Explorer caches shortcut icons; tell it they changed.
         SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
     }

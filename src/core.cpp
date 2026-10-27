@@ -1,6 +1,8 @@
 #include "core.h"
 #include <shlobj.h>
+#include <shobjidl.h>
 #include <shlwapi.h>
+#include <dwmapi.h>
 #include <tlhelp32.h>
 #include <winternl.h>
 #include <algorithm>
@@ -547,6 +549,70 @@ namespace Core {
         return true;
     }
 
+    // Starts an account's Claude, handing it a claude:// link when there is one. If it is
+    // already open, Electron's single instance lock passes the link to the running copy.
+    static void Spawn(const std::wstring& id, const std::wstring& link) {
+        if (!Util::Exists(App.exe)) Init(false);   // updated under us
+        auto path = ProfilePath(id);
+        auto quoted = link.empty() ? L"" : L"\"" + link + L"\"";
+        if (id == DefaultId && App.kind == L"Msix" && !link.empty()) {
+            // Through the package, as Windows itself would have, so Claude keeps its identity.
+            IApplicationActivationManager* m = nullptr; DWORD pid = 0;
+            HRESULT hr = CoCreateInstance(CLSID_ApplicationActivationManager, nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&m));
+            if (SUCCEEDED(hr)) { hr = m->ActivateApplication(App.aumid.c_str(), quoted.c_str(), AO_NONE, &pid); m->Release(); }
+            if (FAILED(hr)) throw Util::Format(Tr(L"Couldn't start Claude (code 0x%08lX)", L"Не удалось запустить Claude (код 0x%08lX)"), (unsigned long)hr);
+            return;
+        }
+
+        SHELLEXECUTEINFOW sei{ sizeof sei };
+        sei.fMask = SEE_MASK_NOASYNC;
+        sei.nShow = SW_SHOWNORMAL;
+        std::wstring args, file, dir = Util::Parent(App.exe);
+        if (id == DefaultId) {
+            if (App.kind == L"Msix") { file = L"explorer.exe"; args = L"shell:AppsFolder\\" + App.aumid; }   // keeps package identity
+            else { file = App.exe; args = quoted; }
+        } else {
+            CreateDirectoryW(path.c_str(), nullptr);
+            file = App.exe; args = L"--user-data-dir=\"" + path + L"\"" + (link.empty() ? L"" : L" " + quoted);
+        }
+        sei.lpFile = file.c_str(); sei.lpParameters = args.c_str(); sei.lpDirectory = dir.c_str();
+        if (!ShellExecuteExW(&sei)) throw Util::Format(Tr(L"Couldn't start Claude (code %lu)", L"Не удалось запустить Claude (код %lu)"), GetLastError());
+    }
+
+    void OpenLink(const std::wstring& url) {
+        if (Paths::Demo) return;
+        // Only claude: links, and nothing that could close the quotes and add switches of its own.
+        if (_wcsnicmp(url.c_str(), L"claude:", 7) != 0 || url.find_first_of(L"\"\r\n") != std::wstring::npos) {
+            Log(L"Ignored a link that is not a claude:// link");
+            return;
+        }
+        auto running = RunningMap();
+        std::map<DWORD, std::wstring> dirOf;
+        for (auto& r : running) dirOf[r.second] = r.first;
+        // A sign-in finished in the browser comes back as a link to the account that sent the
+        // browser there, which is the Claude window used last. EnumWindows walks the Z order
+        // from the top, so the first Claude window it meets is that one.
+        struct Ctx { std::map<DWORD, std::wstring>* dirs; std::wstring hit; } ctx{ &dirOf };
+        EnumWindows([](HWND h, LPARAM l) -> BOOL {
+            auto c = (Ctx*)l; DWORD pid = 0; GetWindowThreadProcessId(h, &pid);
+            auto d = c->dirs->find(pid);
+            if (d == c->dirs->end() || !IsWindowVisible(h)) return TRUE;
+            BOOL cloaked = FALSE;   // on another virtual desktop, or a window Claude keeps hidden
+            DwmGetWindowAttribute(h, DWMWA_CLOAKED, &cloaked, sizeof cloaked);
+            if (cloaked) return TRUE;
+            c->hit = d->second;
+            return FALSE;
+        }, (LPARAM)&ctx);
+        if (ctx.hit.empty() && running.size() == 1) ctx.hit = running.begin()->first;   // the only one open, hidden in the tray
+        std::wstring id = DefaultId;
+        for (auto& p : ProfileList(false)) {
+            auto key = Util::Lower(p.path); while (!key.empty() && key.back() == L'\\') key.pop_back();
+            if (key == ctx.hit) { id = p.id; break; }
+        }
+        AllowSetForegroundWindow(ASFW_ANY);
+        Spawn(id, url);
+    }
+
     bool Start(const std::wstring& id) {
         if (Paths::Demo) return false;
         auto path = ProfilePath(id);
@@ -557,21 +623,7 @@ namespace Core {
         // A window hidden to the tray has no visible window. Launching again is still right:
         // Electron's single instance lock hands it to the running copy.
         if (open && ShowWindowOf(r->second)) return true;
-        if (!Util::Exists(App.exe)) Init(false);   // updated under us
-
-        SHELLEXECUTEINFOW sei{ sizeof sei };
-        sei.fMask = SEE_MASK_NOASYNC;
-        sei.nShow = SW_SHOWNORMAL;
-        std::wstring args, file, dir = Util::Parent(App.exe);
-        if (id == DefaultId) {
-            if (App.kind == L"Msix") { file = L"explorer.exe"; args = L"shell:AppsFolder\\" + App.aumid; }   // keeps package identity
-            else file = App.exe;
-        } else {
-            CreateDirectoryW(path.c_str(), nullptr);
-            file = App.exe; args = L"--user-data-dir=\"" + path + L"\"";
-        }
-        sei.lpFile = file.c_str(); sei.lpParameters = args.c_str(); sei.lpDirectory = dir.c_str();
-        if (!ShellExecuteExW(&sei)) throw Util::Format(Tr(L"Couldn't start Claude (code %lu)", L"Не удалось запустить Claude (код %lu)"), GetLastError());
+        Spawn(id, L"");
         return open;
     }
 

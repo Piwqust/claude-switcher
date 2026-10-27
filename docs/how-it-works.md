@@ -44,7 +44,8 @@ flowchart LR
 - **Claude Code.** Its settings, plugins, MCP servers and session history live in `%USERPROFILE%\.claude` and `.claude.json`, one set for every account.
 - **One code folder.** Code sessions in two windows working in the same repository can edit the same files at once.
 - **Claude's own quick-entry hotkey** goes to whichever copy started first.
-- **`claude://` links and Claude in Chrome** always use the main account.
+- **`claude://` links**, the end of a sign-in with Google or single sign-on among them, go to the main account until you choose Claude Profile Switcher for CLAUDE in Windows Settings (Settings → Sign-in and links → Choose). After that each link goes to the account whose window you used last, which is the one that sent you to the browser.
+- **Claude in Chrome** always uses the main account.
 - **Memory.** Each open account is a full copy of the app; budget roughly one Claude per window.
 - **Updates.** Claude updates once for everyone. Windows already open stay on the old version until restarted.
 
@@ -53,6 +54,7 @@ flowchart LR
 - **The main account is never modified.** The Microsoft Store build is started through `shell:AppsFolder` rather than by running the exe, so it keeps its package identity: auto update, `claude://` links and native messaging behave exactly as before. The profiles the switcher creates live in `%LOCALAPPDATA%\ClaudeProfiles`, away from Claude's data.
 - **Claude's path changes with every update**, because it contains the version number. Shortcuts look Claude up when clicked and carry their own icons, so they survive updates.
 - **Open windows are detected by Claude Desktop's own process.** The Claude Code CLI is also called `claude.exe`; those processes are ignored.
+- **Windows gives `claude://` links to the Store package**, whatever Claude writes to `HKCU\Software\Classes\claude` on every start, and only you can change the default. So the switcher registers itself as one more handler and leaves Claude's key alone. Picked, it passes each link on to the account whose Claude window is highest on screen; the main account gets it through its package, as before.
 - **Renaming changes a label only.** The folder name is a profile's permanent id, because Electron stores absolute paths inside its data.
 - **Separate taskbar buttons** work by giving each account's windows their own `AppUserModelID`. Claude itself is not changed.
 
@@ -72,7 +74,7 @@ A figure is shown only if it is at most 15 minutes old and its window has not re
 - **No network access.** The switcher makes no network requests at all: there is no networking code, no telemetry and no update check.
 - **Sign-ins are never touched.** Tokens, cookies and passwords are not read or copied. Each account signs in by itself in its own Claude window.
 - **Claude is not modified.** Only standard Electron and Windows mechanisms; no patching, no proxy.
-- **No admin rights.** Everything goes into your user profile: `%LOCALAPPDATA%\ClaudeProfiles` and an `HKCU\…\Run` value for start with Windows.
+- **No admin rights.** Everything goes into your user profile: `%LOCALAPPDATA%\ClaudeProfiles`, an `HKCU\…\Run` value for start with Windows, and its `claude://` handler registration under `HKCU\Software`.
 - **Built in the open.** Every release is built by [GitHub Actions](https://github.com/Piwqust/claude-switcher/actions) from this repository, with SHA-256 checksums next to the files.
 
 Found a vulnerability? See [SECURITY.md](../SECURITY.md).

@@ -6,6 +6,7 @@
     ClaudeProfileSwitcher.exe --restart Work  close an account's Claude and open it again, then exit
     ClaudeProfileSwitcher.exe --close Work    close an account's Claude for good, tray included, then exit
     ClaudeProfileSwitcher.exe --add-account   add an account (in the running switcher if there is one)
+    ClaudeProfileSwitcher.exe --open-link <url>   a claude:// link, to the account used last (Windows runs this)
     ClaudeProfileSwitcher.exe --install       install or refresh the install, then open the picker
     ClaudeProfileSwitcher.exe --claude-path <exe>   point at Claude.exe if detection fails (remembered)
 
@@ -54,6 +55,13 @@ static int Run() {
     if (!claudePath.empty()) {
         if (!Util::Exists(claudePath)) throw Util::Format(Tr(L"--claude-path points to %s, which doesn't exist", L"--claude-path указывает на %s, такого файла нет"), Util::Q(claudePath).c_str());
         Settings::Set(L"ClaudePath", claudePath);
+    }
+
+    auto link = arg(L"--open-link");
+    if (!link.empty()) {
+        if (!EnsureClaude(true)) return 1;
+        Core::OpenLink(link);
+        return 0;
     }
 
     auto launch = arg(L"--launch");
