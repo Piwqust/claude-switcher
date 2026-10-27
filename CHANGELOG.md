@@ -5,6 +5,8 @@ Each version's section becomes the description of its GitHub release.
 
 ## [Unreleased]
 
+## [1.0.3] — 2026-10-27
+
 ### Fixed
 
 - **Signing in to an extra account with Google or single sign-on now comes back to that account**, not to the main one. Windows sends `claude://` links to the Store package, so the switcher can now handle them instead: choose it once in Settings → Sign-in and links (adding an account offers this too), and each link goes to the account whose window you used last.
@@ -58,7 +60,8 @@ The first release. Claude Profile Switcher is built on [Claude Code Desktop Swit
 - Start with Windows uses `HKCU\…\Run` instead of a shortcut in the Startup folder. The old shortcut is removed.
 - Messages appear as notifications and dialogs instead of a status line at the bottom of the window.
 
-[Unreleased]: https://github.com/Piwqust/claude-switcher/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/Piwqust/claude-switcher/compare/v1.0.3...HEAD
+[1.0.3]: https://github.com/Piwqust/claude-switcher/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/Piwqust/claude-switcher/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/Piwqust/claude-switcher/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/Piwqust/claude-switcher/releases/tag/v1.0.0
