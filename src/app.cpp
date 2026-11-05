@@ -133,6 +133,9 @@ namespace App {
     static void TrayMenu() {
         WinShell::DarkMenus(Gfx::T.dark);
         HMENU m = CreatePopupMenu();
+        // The list is refreshed while the menu is open; the command maps back through this copy.
+        std::vector<std::wstring> ids;
+        for (auto& i : items) ids.push_back(i.p.id);
         int n = 0;
         for (auto& i : items) {
             auto label = i.name + (i.index <= 9 ? Util::Format(L"\tCtrl+Alt+%d", i.index) : L"");
@@ -166,9 +169,9 @@ namespace App {
         int cmd = TrackPopupMenuEx(m, TPM_RETURNCMD | TPM_RIGHTBUTTON | TPM_BOTTOMALIGN, pt.x, pt.y, tray, nullptr);
         PostMessageW(tray, WM_NULL, 0, 0);
         DestroyMenu(m);
-        if (cmd >= 100 && cmd - 100 < (int)items.size()) Launch({ items[cmd - 100].p.id }, false);
-        else if (cmd >= 200 && cmd - 200 < (int)items.size()) Restart({ items[cmd - 200].p.id });
-        else if (cmd >= 300 && cmd - 300 < (int)items.size()) Close({ items[cmd - 300].p.id });
+        if (cmd >= 100 && cmd - 100 < (int)ids.size()) Launch({ ids[cmd - 100] }, false);
+        else if (cmd >= 200 && cmd - 200 < (int)ids.size()) Restart({ ids[cmd - 200] });
+        else if (cmd >= 300 && cmd - 300 < (int)ids.size()) Close({ ids[cmd - 300] });
         else if (cmd == 5) Restart(open);
         else if (cmd == 6) Close(open);
         else if (cmd == 1) ShowPicker();
@@ -352,7 +355,7 @@ namespace App {
 
     struct DeleteResult { std::wstring id, error; };
 
-    void Delete(const std::wstring& id, HWND owner) {
+    void Delete(std::wstring id, HWND owner) {
         auto it = Find(id);
         Core::Trace(Util::Format(L"Delete(%s): found=%d default=%d deleting=%d", id.c_str(), it != nullptr, it && it->p.isDefault, it && it->deleting));
         if (!it || it->p.isDefault || it->deleting) return;
@@ -379,7 +382,7 @@ namespace App {
         }).detach();
     }
 
-    void CopyChats(HWND owner, const std::vector<CodeSession>& picked, const std::wstring& targetId) {
+    void CopyChats(HWND owner, const std::vector<CodeSession>& picked, std::wstring targetId) {
         auto t = Find(targetId);
         if (!t) return;
         auto name = t->name; bool live = t->running();
@@ -404,7 +407,7 @@ namespace App {
 
     // The ⋯ menu of an account card. Native, so it has the system's look, animation and
     // keyboard behaviour; uxtheme's dark mode makes it follow the theme.
-    void ShowMenu(const std::wstring& id, POINT at, HWND owner) {
+    void ShowMenu(std::wstring id, POINT at, HWND owner) {
         auto it = Find(id);
         if (!it) return;
         WinShell::DarkMenus(Gfx::T.dark);

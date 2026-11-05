@@ -175,7 +175,7 @@ namespace Dialogs {
 
     void Info(HWND owner, const std::wstring& title, const std::wstring& text) { Ask(owner, title, text, Tr(L"OK", L"Понятно"), false, L""); }
 
-    void Transfer(HWND owner, const std::wstring& sourceId) {
+    void Transfer(HWND owner, std::wstring sourceId) {
         auto src = App::Find(sourceId);
         if (!src) return;
         auto sessions = Core::CodeSessions(src->p);

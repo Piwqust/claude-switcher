@@ -40,11 +40,11 @@ namespace App {
     void AddAccount();
     void BeginRename(const std::wstring& id);
     void CommitRename(const std::wstring& id, const std::wstring& name);
-    void Delete(const std::wstring& id, HWND owner);
+    void Delete(std::wstring id, HWND owner);
     void ToggleAutoOpen(const std::wstring& id);
-    void ShowMenu(const std::wstring& id, POINT screen, HWND owner);
+    void ShowMenu(std::wstring id, POINT screen, HWND owner);
     void Notify(const std::wstring& title, const std::wstring& text, bool error = false);
-    void CopyChats(HWND owner, const std::vector<CodeSession>& picked, const std::wstring& targetId);
+    void CopyChats(HWND owner, const std::vector<CodeSession>& picked, std::wstring targetId);
 
     // settings
     bool Autostart(); void SetAutostart(bool on);
@@ -79,7 +79,7 @@ namespace SettingsWin { void Show(); bool Visible(); void Restyle(); void Invali
 namespace Dialogs {
     bool Ask(HWND owner, const std::wstring& title, const std::wstring& text, const std::wstring& yes, bool danger = false, const std::wstring& no = Tr(L"Cancel", L"Отмена"));
     void Info(HWND owner, const std::wstring& title, const std::wstring& text);
-    void Transfer(HWND owner, const std::wstring& sourceId);
+    void Transfer(HWND owner, std::wstring sourceId);
     void RestyleAll();
 }
 
