@@ -11,7 +11,8 @@ Each version's section becomes the description of its GitHub release.
 
 ### Fixed
 
-- **Deleting an account works.** Claude unpacks files into each profile with paths longer than Windows' classic 260-character limit, which the shell's delete can't remove: it stopped half way, said nothing, and the account stayed. Profiles are now deleted with long-path support, and the folder is moved aside first, so a delete either completes or touches nothing.
+- **Deleting an account does something again.** The card menu handed the account's name on by reference into the account list, which is rebuilt every 2 seconds while a menu or dialog is open; by the time the delete looked the account up, the name was gone and it quietly did nothing. The same flaw could make the tray menu act on the wrong account. Both now keep their own copy.
+- **Deleting removes the whole account.** Claude unpacks files into each profile with paths longer than Windows' classic 260-character limit, which the shell's delete can't remove: it stopped half way, said nothing, and the account stayed. Profiles are now deleted with long-path support, and the folder is moved aside first, so a delete either completes or touches nothing.
 - Deleting an open account closes its Claude window first instead of refusing, and also ends anything still running from inside its folder, such as Claude Code. If another program still holds a file, the message names it.
 - Deleting runs in the background with a "Deleting…" status instead of freezing the window, and also clears the account's colour, auto-open and auto-name entries. Its icon files are now removed too; they used to pile up.
 - Quitting while a dialog was open did nothing; it now quits.
