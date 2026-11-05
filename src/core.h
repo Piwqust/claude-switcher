@@ -156,4 +156,5 @@ namespace Core {
     long long NowMs();
     std::wstring Age(long long unixMs);            // "только что", "12 мин назад", "в 07:42", "14 окт"
     void Log(const std::wstring& text);
+    void Trace(const std::wstring& text);          // only with CPS_TRACE set
 }

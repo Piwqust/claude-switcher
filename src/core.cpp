@@ -926,6 +926,7 @@ namespace Core {
         if (p.id.empty() || p.id[0] == L'.' || p.id.find_first_of(L"\\/") != std::wstring::npos || !Paths::Same(Util::Parent(path), Paths::Root))
             throw Util::Format(Tr(L"Refusing to delete %s", L"Отказ удалять %s"), Util::Q(path).c_str());
 
+        Trace(L"Core::Delete " + path + (Util::IsDir(path) ? L" (folder exists)" : L" (no folder)"));
         if (Util::IsDir(path)) {
             // Its Claude window, then anything else still running from inside its folder.
             if (!Paths::Demo) { Close(p.id); EndProcesses(ProcessesInside(path)); }
@@ -1372,6 +1373,12 @@ namespace Core {
         if (label.empty()) return false;
         Rename(p, label);
         return true;
+    }
+
+    // Step-by-step notes for chasing a problem, only when CPS_TRACE is set.
+    void Trace(const std::wstring& text) {
+        static bool on = GetEnvironmentVariableW(L"CPS_TRACE", nullptr, 0) > 0;
+        if (on) Log(L"trace: " + text);
     }
 
     // Appended, not rewritten, and started over once it passes 256 KB.

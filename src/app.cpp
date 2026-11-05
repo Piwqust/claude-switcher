@@ -354,12 +354,15 @@ namespace App {
 
     void Delete(const std::wstring& id, HWND owner) {
         auto it = Find(id);
+        Core::Trace(Util::Format(L"Delete(%s): found=%d default=%d deleting=%d", id.c_str(), it != nullptr, it && it->p.isDefault, it && it->deleting));
         if (!it || it->p.isDefault || it->deleting) return;
         auto name = it->name;
         std::wstring text = Tr(L"This signs the account out on this PC. Its profile folder, saved sign-in and shortcuts are deleted; other accounts stay",
                                L"Вы выйдете из этого аккаунта на этом компьютере. Папка профиля, сохранённый вход и ярлыки удалятся, остальные аккаунты останутся");
         if (it->running()) text = Tr(L"Its Claude window will be closed first. ", L"Сначала закроется его окно Claude. ") + text;
-        if (!Dialogs::Ask(Owner(owner), Util::Format(Tr(L"Delete %s?", L"Удалить %s?"), Util::Q(name).c_str()), text, Tr(L"Delete", L"Удалить"), true)) return;
+        bool yes = Dialogs::Ask(Owner(owner), Util::Format(Tr(L"Delete %s?", L"Удалить %s?"), Util::Q(name).c_str()), text, Tr(L"Delete", L"Удалить"), true);
+        Core::Trace(Util::Format(L"Delete(%s): confirmed=%d", id.c_str(), yes));
+        if (!yes) return;
         it = Find(id);   // the list may have been rebuilt while the dialog was open
         if (!it) return;
         it->deleting = true; it->checked = false;
@@ -422,6 +425,7 @@ namespace App {
         SetMenuDefaultItem(m, 1, FALSE);
         int cmd = TrackPopupMenuEx(m, TPM_RETURNCMD | TPM_RIGHTBUTTON, at.x, at.y, owner, nullptr);
         DestroyMenu(m);
+        Core::Trace(Util::Format(L"card menu for %s: command %d", id.c_str(), cmd));
         it = Find(id);
         if (!it) return;
         switch (cmd) {
@@ -499,6 +503,7 @@ namespace App {
         }
         case WM_DELETED: {
             auto r = (DeleteResult*)l;
+            Core::Trace(L"delete of " + r->id + L" finished: " + (r->error.empty() ? L"ok" : r->error));
             if (r->error.empty()) {
                 for (size_t k = 0; k < items.size(); k++) if (items[k].p.id == r->id) { items.erase(items.begin() + k); break; }
                 WinShell::UpdateJumpList(Profiles());

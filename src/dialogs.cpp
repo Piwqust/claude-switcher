@@ -25,6 +25,7 @@ namespace {
             int ww = wr.right - wr.left, wh = wr.bottom - wr.top;
             SetWindowPos(hwnd, nullptr, (ref.left + ref.right - ww) / 2, (ref.top + ref.bottom - wh) / 2, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
             if (owner) EnableWindow(owner, FALSE);
+            Core::Trace(Util::Format(L"dialog '%s' shown, owner %p", title, (void*)owner));
             Show(true);
             // GetMessage takes WM_QUIT off the queue and returns 0, so it is posted again for
             // the main loop; otherwise quitting while a dialog is open would be lost.
@@ -39,8 +40,8 @@ namespace {
             open.erase(this);
             ShowWindow(hwnd, SW_HIDE);
         }
-        void End(int r) { result = r; done = true; }
-        void OnClose() override { End(0); }
+        void End(int r) { Core::Trace(Util::Format(L"dialog ends with %d", r)); result = r; done = true; }
+        void OnClose() override { Core::Trace(L"dialog closed (Esc or close box)"); End(0); }
 
         // ContentDialog layout: body on the window, buttons on a darker band at the bottom.
         float Footer(float y, const std::vector<std::pair<std::wstring, int>>& buttons, bool danger, const std::wstring& note = L"") {

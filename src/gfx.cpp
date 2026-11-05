@@ -298,6 +298,7 @@ LRESULT Surface::Handle(UINT m, WPARAM w, LPARAM l) {
         ReleaseCapture();
         auto hit = At(GET_X_LPARAM(l) / scale, GET_Y_LPARAM(l) / scale);
         UINT was = pressed; pressed = 0; Invalidate();
+        Core::Trace(Util::Format(L"mouse up in window %p on region %08X (pressed %08X)", (void*)hwnd, hit ? hit->id : 0, was));
         if (hit && hit->id == was && hit->click) { auto fn = hit->click; fn(); }
         return 0;
     }
@@ -308,6 +309,7 @@ LRESULT Surface::Handle(UINT m, WPARAM w, LPARAM l) {
         return 0;
     }
     case WM_KEYDOWN: case WM_SYSKEYDOWN: {
+        Core::Trace(Util::Format(L"key 0x%02X in window %p", (UINT)w, (void*)hwnd));
         bool alt = (GetKeyState(VK_MENU) & 0x8000) != 0;
         if (OnKey((UINT)w, alt)) return 0;
         if (w == VK_TAB) { MoveFocus(GetKeyState(VK_SHIFT) & 0x8000 ? -1 : 1); return 0; }
