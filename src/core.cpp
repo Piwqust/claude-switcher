@@ -225,13 +225,23 @@ namespace Settings {
         static CRITICAL_SECTION cs; static bool init = (InitializeCriticalSection(&cs), true); (void)init; return &cs;
     }
 
+    // Every Flag/Str/List call reads settings, many times per refresh, so the parsed file is
+    // kept and read again only when its timestamp moves (another copy, or a hand edit).
+    static json::Value cache;
+    static ULONGLONG cacheTime = ~0ull;
+
     json::Value Load() {
         EnterCriticalSection(Lock());
-        json::Value v;
-        auto text = Util::ReadText(Paths::SettingsFile);
-        if (text.empty() || !json::Parser::Parse(text, v) || v.type != json::Value::Object) v = json::Value::MakeObject();
+        auto stamp = Util::FileTime(Paths::SettingsFile);
+        if (stamp != cacheTime || stamp == 0) {
+            json::Value v;
+            auto text = Util::ReadText(Paths::SettingsFile);
+            if (text.empty() || !json::Parser::Parse(text, v) || v.type != json::Value::Object) v = json::Value::MakeObject();
+            cache = std::move(v); cacheTime = stamp;
+        }
+        json::Value copy = cache;
         LeaveCriticalSection(Lock());
-        return v;
+        return copy;
     }
 
     void Save(const json::Value& v) {
@@ -239,7 +249,8 @@ namespace Settings {
         CreateDirectoryW(Paths::Root.c_str(), nullptr);
         std::wstring out; json::Write(out, v);
         // With a BOM, so the PowerShell version still reads non-ASCII labels correctly.
-        Util::WriteText(Paths::SettingsFile, out, true);
+        if (Util::WriteText(Paths::SettingsFile, out, true)) { cache = v; cacheTime = Util::FileTime(Paths::SettingsFile); }
+        else cacheTime = ~0ull;
         LeaveCriticalSection(Lock());
     }
 
@@ -297,12 +308,36 @@ namespace Core {
         return best;
     }
 
-    // Older Store builds were redirected into the package container; current ones write
-    // to the real %APPDATA%\Claude. Whichever exists is where Default lives.
-    static std::wstring MsixData(const std::wstring& family) {
-        auto packaged = Env(L"LOCALAPPDATA") + L"\\Packages\\" + family + L"\\LocalCache\\Roaming\\Claude";
-        if (Util::IsDir(packaged)) return packaged;
-        return Util::IsDir(ClassicData()) ? ClassicData() : packaged;
+    static ULONGLONG LastUsed(const std::wstring& dir);
+
+    /*
+        Where the main account's data lives has moved over the years:
+          %LOCALAPPDATA%\Claude-Data\claude_<publisher>       Claude 4.x and later (moved there by Claude itself)
+          %LOCALAPPDATA%\Packages\<family>\LocalCache\Roaming\Claude   early Store builds
+          %APPDATA%\Claude                                      installer builds and Store builds in between
+        Claude leaves the old folders behind, so the one it wrote to last is the live one.
+    */
+    static std::wstring DefaultData(const std::wstring& family) {
+        std::vector<std::wstring> candidates;
+        auto local = Env(L"LOCALAPPDATA");
+        auto relocated = local + L"\\Claude-Data";
+        if (!family.empty()) candidates.push_back(relocated + L"\\" + Util::Lower(family));
+        WIN32_FIND_DATAW fd; HANDLE h = FindFirstFileW((relocated + L"\\*").c_str(), &fd);
+        if (h != INVALID_HANDLE_VALUE) {
+            do if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && fd.cFileName[0] != L'.') candidates.push_back(relocated + L"\\" + fd.cFileName);
+            while (FindNextFileW(h, &fd));
+            FindClose(h);
+        }
+        if (!family.empty()) candidates.push_back(local + L"\\Packages\\" + family + L"\\LocalCache\\Roaming\\Claude");
+        candidates.push_back(ClassicData());
+        std::wstring best; ULONGLONG bestTime = 0;
+        for (auto& c : candidates) {
+            auto t = LastUsed(c);
+            if (t > bestTime) { best = c; bestTime = t; }
+        }
+        if (!best.empty()) return best;
+        for (auto& c : candidates) if (Util::IsDir(c)) return c;
+        return ClassicData();
     }
 
     static bool FindMsix(ClaudeInstall& out) {
@@ -332,7 +367,7 @@ namespace Core {
             if (!Util::Exists(exe)) exe = FindExe(root, 2);
             if (exe.empty() || (found && ver <= bestVer)) continue;
             auto family = parts[0] + L"_" + parts.back();
-            out = { L"Msix", exe, parts[1], family + L"!Claude", MsixData(family) };
+            out = { L"Msix", exe, parts[1], family + L"!Claude", L"" };
             found = true; bestVer = ver;
         }
         RegCloseKey(k);
@@ -361,30 +396,39 @@ namespace Core {
         for (auto& d : dirs) {
             if (!Util::IsDir(d)) continue;
             auto exe = FindExe(d, 2);
-            if (!exe.empty()) { out = { L"Classic", exe, L"unknown", L"", ClassicData() }; return true; }
+            if (!exe.empty()) { out = { L"Classic", exe, L"unknown", L"", L"" }; return true; }
         }
         return false;
     }
 
-    static void Detect(bool allowCache);
-    void Init(bool allowCache) {
-        Detect(allowCache);
-        if (Paths::Demo) App.defaultData = Paths::Root + L"\\.default";
-    }
-
-    static void Detect(bool allowCache) {
+    // Fills App; true when it was looked up just now rather than taken from the cache.
+    static bool Detect(bool allowCache) {
+        App = {};
         auto saved = Settings::Str(L"ClaudePath");
-        if (!saved.empty() && Util::Exists(saved)) { App = { L"Classic", saved, L"unknown", L"", ClassicData() }; return; }
+        if (!saved.empty() && Util::Exists(saved)) { App = { L"Classic", saved, L"unknown", L"", L"" }; return true; }
+        // The Store lookup is one registry key and always runs, so a Claude update is picked up
+        // at once instead of starting the old version while its folder lingers.
+        if (FindMsix(App)) return true;
         if (allowCache) {
-            // Shortcut clicks pay for discovery every time, so they may use the last result
-            // as long as that versioned path still exists.
+            // The installer lookup walks every uninstall entry, so shortcut clicks reuse the
+            // last result while that path still exists.
             auto all = Settings::Load(); auto c = all.Find(L"InstallCache");
-            if (c && Util::Exists(c->Str(L"Exe"))) {
-                App = { c->Str(L"Kind", L"Classic"), c->Str(L"Exe"), c->Str(L"Version", L"unknown"), c->Str(L"AppUserModelId"), c->Str(L"DefaultProfilePath", ClassicData()) };
-                return;
+            if (c && c->Str(L"Kind") == L"Classic" && Util::Exists(c->Str(L"Exe"))) {
+                App = { L"Classic", c->Str(L"Exe"), c->Str(L"Version", L"unknown"), L"", L"" };
+                return false;
             }
         }
-        if (!FindMsix(App) && !FindClassic(App)) throw NotFound();
+        return FindClassic(App);
+    }
+
+    void Init(bool allowCache) {
+        bool fresh = Detect(allowCache);
+        if (App.exe.empty()) throw NotFound();
+        auto family = App.kind == L"Msix" ? App.aumid.substr(0, App.aumid.find(L'!')) : L"";
+        App.defaultData = Paths::Demo ? Paths::Root + L"\\.default" : DefaultData(family);
+        if (!fresh || Paths::Demo) return;
+        auto all = Settings::Load(); auto old = all.Find(L"InstallCache");
+        if (old && old->Str(L"Exe") == App.exe && old->Str(L"DefaultProfilePath") == App.defaultData) return;
         auto c = json::Value::MakeObject();
         c[L"Kind"] = App.kind; c[L"Exe"] = App.exe; c[L"Version"] = App.version;
         c[L"AppUserModelId"] = App.aumid; c[L"DefaultProfilePath"] = App.defaultData;
@@ -394,6 +438,13 @@ namespace Core {
     // ============================================================ profiles
 
     std::wstring ProfilePath(const std::wstring& id) { return id == DefaultId ? App.defaultData : Paths::Root + L"\\" + id; }
+
+    // How a profile folder is compared: lower case, no trailing backslash.
+    std::wstring Key(const std::wstring& path) {
+        auto k = Util::Lower(path);
+        while (!k.empty() && (k.back() == L'\\' || k.back() == L'/')) k.pop_back();
+        return k;
+    }
 
     // Is this the desktop app's own executable, whichever version of it?
     static bool IsDesktopExe(const std::wstring& image) {
@@ -413,7 +464,7 @@ namespace Core {
         return img.rfind(dir + L"\\", 0) == 0;
     }
 
-    static std::wstring UserDataDir(const std::wstring& cmd) {
+    std::wstring UserDataDir(const std::wstring& cmd) {
         auto i = cmd.find(L"--user-data-dir=");
         if (i == std::wstring::npos) return L"";
         // Either --user-data-dir="C:\x y" or, as some launches pass it on, "--user-data-dir=C:\x y".
@@ -433,14 +484,13 @@ namespace Core {
         std::map<std::wstring, DWORD> map;
         if (Paths::Demo) {
             // Stand-in accounts count as open when settings.json lists them under DemoRunning.
-            for (auto& id : Settings::List(L"DemoRunning")) map[Util::Lower(ProfilePath(id))] = 1;
+            for (auto& id : Settings::List(L"DemoRunning")) map[Key(ProfilePath(id))] = 1;
             return map;
         }
         HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
         if (snap == INVALID_HANDLE_VALUE) return map;
         PROCESSENTRY32W pe{ sizeof pe };
-        auto def = Util::Lower(App.defaultData);
-        while (!def.empty() && def.back() == L'\\') def.pop_back();
+        auto def = Key(App.defaultData);
         for (BOOL ok = Process32FirstW(snap, &pe); ok; ok = Process32NextW(snap, &pe)) {
             if (_wcsicmp(pe.szExeFile, L"claude.exe") != 0) continue;
             auto image = Util::ImageOf(pe.th32ProcessID);
@@ -448,7 +498,7 @@ namespace Core {
             auto cmd = Util::CommandLineOf(pe.th32ProcessID);
             if (cmd.empty() || cmd.find(L"--type=") != std::wstring::npos) continue;
             auto dir = UserDataDir(cmd);
-            auto key = dir.empty() ? def : Util::Lower(dir);
+            auto key = dir.empty() ? def : Key(dir);
             if (!map.count(key)) map[key] = pe.th32ProcessID;
         }
         CloseHandle(snap);
@@ -493,8 +543,7 @@ namespace Core {
             p.id = id; p.isDefault = id == DefaultId; p.path = ProfilePath(id);
             auto l = labels.find(Util::Lower(id));
             p.name = l != labels.end() && !l->second.empty() ? l->second : id;
-            auto key = Util::Lower(p.path); while (!key.empty() && key.back() == L'\\') key.pop_back();
-            auto r = running.find(key); if (r != running.end()) p.pid = r->second;
+            auto r = running.find(Key(p.path)); if (r != running.end()) p.pid = r->second;
             p.lastUsed = LastUsed(p.path);
             p.usage = ReadUsage(p.path);
             out.push_back(p);
@@ -533,19 +582,34 @@ namespace Core {
         std::wstring name;
         for (int n = 2;; n++) { name = Util::Format(L"Account %d", n); if (ValidateName(name).empty()) break; }
         CreateDirectoryW(Paths::Root.c_str(), nullptr);
-        CreateDirectoryW((Paths::Root + L"\\" + name).c_str(), nullptr);
-        Profile p; Resolve(name, p);
+        if (!CreateDirectoryW((Paths::Root + L"\\" + name).c_str(), nullptr) && GetLastError() != ERROR_ALREADY_EXISTS)
+            throw Util::Format(Tr(L"Couldn't create the profile folder %s (code %lu)", L"Не удалось создать папку профиля %s (код %lu)"), Util::Q(name).c_str(), GetLastError());
+        Profile p;
+        if (!Resolve(name, p)) throw Util::Format(Tr(L"The new account %s didn't appear", L"Новый аккаунт %s не появился"), Util::Q(name).c_str());
         // Straight to the sign-in screen: there is nothing else to do with an empty profile.
         Start(p.id);
         return p;
     }
 
+    // Brings an open window forward. Windows only lets the foreground process hand focus on,
+    // and a click in the picker or a shortcut makes us that process, but by the time a worker
+    // thread gets here the lock may already be back. A synthetic Alt press is the documented
+    // way to count as user input again; without it the window only flashed on the taskbar.
     static bool ShowWindowOf(DWORD pid) {
         auto wins = Util::AppWindowsOf(pid);
         if (wins.empty()) return false;
         HWND h = wins[0];
+        AllowSetForegroundWindow(pid);
         if (IsIconic(h)) ShowWindow(h, SW_RESTORE);
-        SetForegroundWindow(h);
+        if (!SetForegroundWindow(h) || GetForegroundWindow() != h) {
+            INPUT alt[2] = {};
+            alt[0].type = alt[1].type = INPUT_KEYBOARD;
+            alt[0].ki.wVk = alt[1].ki.wVk = VK_MENU;
+            alt[1].ki.dwFlags = KEYEVENTF_KEYUP;
+            SendInput(2, alt, sizeof(INPUT));
+            SetForegroundWindow(h);
+        }
+        BringWindowToTop(h);
         return true;
     }
 
@@ -606,8 +670,7 @@ namespace Core {
         if (ctx.hit.empty() && running.size() == 1) ctx.hit = running.begin()->first;   // the only one open, hidden in the tray
         std::wstring id = DefaultId;
         for (auto& p : ProfileList(false)) {
-            auto key = Util::Lower(p.path); while (!key.empty() && key.back() == L'\\') key.pop_back();
-            if (key == ctx.hit) { id = p.id; break; }
+            if (Key(p.path) == ctx.hit) { id = p.id; break; }
         }
         AllowSetForegroundWindow(ASFW_ANY);
         Spawn(id, url);
@@ -615,14 +678,14 @@ namespace Core {
 
     bool Start(const std::wstring& id) {
         if (Paths::Demo) return false;
-        auto path = ProfilePath(id);
-        auto key = Util::Lower(path); while (!key.empty() && key.back() == L'\\') key.pop_back();
         auto running = RunningMap();
-        auto r = running.find(key);
+        auto r = running.find(Key(ProfilePath(id)));
         bool open = r != running.end();
         // A window hidden to the tray has no visible window. Launching again is still right:
         // Electron's single instance lock hands it to the running copy.
         if (open && ShowWindowOf(r->second)) return true;
+        // Lets the new Claude, or the running copy it hands over to, take the foreground.
+        AllowSetForegroundWindow(ASFW_ANY);
         Spawn(id, L"");
         return open;
     }
@@ -633,9 +696,8 @@ namespace Core {
     // straight to the dying copy.
     bool Close(const std::wstring& id) {
         if (Paths::Demo) return false;
-        auto key = Util::Lower(ProfilePath(id)); while (!key.empty() && key.back() == L'\\') key.pop_back();
         auto running = RunningMap();
-        auto r = running.find(key);
+        auto r = running.find(Key(ProfilePath(id)));
         if (r != running.end()) {
             std::vector<DWORD> tree{ r->second };
             HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -749,8 +811,7 @@ namespace Core {
         // Never recurse into anything that is not a direct child of our own folder.
         if (p.id.empty() || p.id[0] == L'.' || p.id.find_first_of(L"\\/") != std::wstring::npos || !Paths::Same(Util::Parent(path), Paths::Root))
             throw Util::Format(Tr(L"Refusing to delete %s", L"Отказ удалять %s"), Util::Q(path).c_str());
-        auto key = Util::Lower(path);
-        if (RunningMap().count(key)) throw Util::Format(Tr(L"Close the %s window first", L"Сначала закройте окно %s"), Util::Q(p.name).c_str());
+        if (RunningMap().count(Key(path))) throw Util::Format(Tr(L"Close the %s window first", L"Сначала закройте окно %s"), Util::Q(p.name).c_str());
         if (Util::IsDir(path)) RemoveTree(path);
         RemoveShortcuts(p.name);
         RemoveIcons(p.id);
@@ -971,11 +1032,23 @@ namespace Core {
         return u;
     }
 
+    // Appended, not rewritten, and started over once it passes 256 KB.
     void Log(const std::wstring& text) {
         CreateDirectoryW(Paths::Root.c_str(), nullptr);
         SYSTEMTIME t; GetLocalTime(&t);
-        auto line = Util::Format(L"[%04d-%02d-%02dT%02d:%02d:%02d] ", t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond) + text + L"\r\n\r\n";
-        auto old = Util::ReadText(Paths::Log);
-        Util::WriteText(Paths::Log, old + line, false);
+        auto line = Util::Format(L"[%04d-%02d-%02dT%02d:%02d:%02d] ", t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond) + text + L"\r\n";
+        int n = WideCharToMultiByte(CP_UTF8, 0, line.c_str(), (int)line.size(), nullptr, 0, nullptr, nullptr);
+        std::string bytes(n, '\0');
+        WideCharToMultiByte(CP_UTF8, 0, line.c_str(), (int)line.size(), &bytes[0], n, nullptr, nullptr);
+        HANDLE h = CreateFileW(Paths::Log.c_str(), FILE_APPEND_DATA | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_ALWAYS, 0, nullptr);
+        if (h == INVALID_HANDLE_VALUE) return;
+        LARGE_INTEGER size{};
+        if (GetFileSizeEx(h, &size) && size.QuadPart > (256 << 10)) {
+            CloseHandle(h);
+            h = CreateFileW(Paths::Log.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, 0, nullptr);
+            if (h == INVALID_HANDLE_VALUE) return;
+        }
+        DWORD wrote = 0; WriteFile(h, bytes.data(), (DWORD)bytes.size(), &wrote, nullptr);
+        CloseHandle(h);
     }
 }

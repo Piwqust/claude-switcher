@@ -79,19 +79,43 @@ using namespace Gfx;
     // in the browser came back to the main account. Windows lets only the person change that,
     // so the switcher just offers itself as a handler; Claude's own key is left alone.
     static const wchar_t* LinkProgId = L"ClaudeProfileSwitcher.Link";
+    // What the PowerShell version registered. If it was picked in Windows Settings, Windows still
+    // sends every claude:// link there, to a script that no longer exists, and every sign-in
+    // finished in the browser is lost. Windows signs the choice, so it can't be moved to the
+    // new handler; the old one is taken over instead and pointed at this exe.
+    static const wchar_t* LegacyProgId = L"ClaudeProfileRouter.claude";
     static const wchar_t* LinkCaps = L"Software\\ClaudeProfileSwitcher\\Capabilities";
 
     static void RegStr(const std::wstring& key, const wchar_t* name, const std::wstring& value) {
         RegSetKeyValueW(HKEY_CURRENT_USER, key.c_str(), name, REG_SZ, value.c_str(), (DWORD)((value.size() + 1) * sizeof(wchar_t)));
     }
 
+    static void WriteHandler(const std::wstring& progId, const std::wstring& exe) {
+        auto cls = L"Software\\Classes\\" + progId;
+        RegStr(cls, nullptr, L"URL:Claude");
+        RegStr(cls, L"URL Protocol", L"");
+        RegStr(cls + L"\\DefaultIcon", nullptr, L"\"" + exe + L"\",0");
+        RegStr(cls + L"\\shell\\open\\command", nullptr, L"\"" + exe + L"\" --open-link \"%1\"");
+    }
+
+    static std::wstring CurrentLinkHandler() {
+        IApplicationAssociationRegistration* r = nullptr;
+        if (FAILED(CoCreateInstance(CLSID_ApplicationAssociationRegistration, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&r)))) return L"";
+        LPWSTR prog = nullptr; std::wstring out;
+        if (SUCCEEDED(r->QueryCurrentDefault(L"claude", AT_URLPROTOCOL, AL_EFFECTIVE, &prog))) { out = prog; CoTaskMemFree(prog); }
+        r->Release();
+        return out;
+    }
+
     void RegisterLinks() {
         if (Paths::Demo) return;
         auto exe = Paths::Launcher();
-        auto cls = std::wstring(L"Software\\Classes\\") + LinkProgId;
-        RegStr(cls, nullptr, L"URL:Claude");
-        RegStr(cls + L"\\DefaultIcon", nullptr, L"\"" + exe + L"\",0");
-        RegStr(cls + L"\\shell\\open\\command", nullptr, L"\"" + exe + L"\" --open-link \"%1\"");
+        WriteHandler(LinkProgId, exe);
+        HKEY legacy;
+        if (RegOpenKeyExW(HKEY_CURRENT_USER, (std::wstring(L"Software\\Classes\\") + LegacyProgId).c_str(), 0, KEY_READ, &legacy) == ERROR_SUCCESS) {
+            RegCloseKey(legacy);
+            WriteHandler(LegacyProgId, exe);
+        }
         RegStr(LinkCaps, L"ApplicationName", RunValue);
         RegStr(LinkCaps, L"ApplicationDescription", Tr(L"Opens claude:// links in the Claude account you used last", L"Открывает ссылки claude:// в аккаунте Claude, которым вы пользовались последним"));
         RegStr(std::wstring(LinkCaps) + L"\\URLAssociations", L"claude", LinkProgId);
@@ -100,12 +124,8 @@ using namespace Gfx;
 
     bool LinksRouted() {
         if (Paths::Demo) return false;
-        IApplicationAssociationRegistration* r = nullptr;
-        if (FAILED(CoCreateInstance(CLSID_ApplicationAssociationRegistration, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&r)))) return false;
-        LPWSTR prog = nullptr; bool ours = false;
-        if (SUCCEEDED(r->QueryCurrentDefault(L"claude", AT_URLPROTOCOL, AL_EFFECTIVE, &prog))) { ours = _wcsicmp(prog, LinkProgId) == 0; CoTaskMemFree(prog); }
-        r->Release();
-        return ours;
+        auto prog = CurrentLinkHandler();
+        return _wcsicmp(prog.c_str(), LinkProgId) == 0 || _wcsicmp(prog.c_str(), LegacyProgId) == 0;
     }
 
     void ChooseLinkHandler() {
@@ -324,12 +344,9 @@ namespace WinShell {
         auto image = Util::ImageOf(pid);
         if (_wcsicmp(Util::Leaf(image).c_str(), L"claude.exe") == 0) {
             auto cmd = Util::CommandLineOf(pid);
-            auto i = cmd.find(L"--user-data-dir=");
-            if (cmd.find(L"--type=") == std::wstring::npos && i != std::wstring::npos) {
-                i += 16; std::wstring dir;
-                if (cmd[i] == L'"') dir = cmd.substr(i + 1, cmd.find(L'"', i + 1) - i - 1); else dir = cmd.substr(i, cmd.find(L' ', i) - i);
-                while (!dir.empty() && dir.back() == L'\\') dir.pop_back();
-                if (Paths::Same(Util::Parent(dir), Paths::Root)) result = Util::Leaf(dir);
+            if (cmd.find(L"--type=") == std::wstring::npos) {
+                auto dir = Core::UserDataDir(cmd);
+                if (!dir.empty() && Paths::Same(Util::Parent(dir), Paths::Root)) result = Util::Leaf(dir);
             }
         }
         pidProfile[pid] = result;

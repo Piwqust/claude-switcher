@@ -108,6 +108,8 @@ namespace Core {
     void Init(bool allowCache);                    // throws NotFound
 
     std::wstring ProfilePath(const std::wstring& id);
+    std::wstring Key(const std::wstring& path);    // lower case, no trailing slash: how folders are compared
+    std::wstring UserDataDir(const std::wstring& commandLine);   // its --user-data-dir, or L""
     std::map<std::wstring, DWORD> RunningMap();    // lower-case profile dir -> pid
     std::vector<Profile> ProfileList(bool withStatus);
     bool Resolve(const std::wstring& name, Profile& out);

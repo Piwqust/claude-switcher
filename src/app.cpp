@@ -298,10 +298,10 @@ namespace App {
     }
 
     void AddAccount() {
-        // Asked once: the new account's sign-in may finish in the browser, and that only comes
-        // back to it once the switcher handles claude:// links.
-        if (!Paths::Demo && !Settings::Flag(L"LinksAsked", false) && !Core::LinksRouted()) {
-            Settings::Set(L"LinksAsked", true);
+        // The new account's sign-in may finish in the browser, and that only comes back to it
+        // once the switcher handles claude:// links. Without that the sign-in is lost, so this
+        // asks every time an account is added until it is set up.
+        if (!Paths::Demo && !Core::LinksRouted()) {
             if (Dialogs::Ask(Owner(nullptr), Tr(L"Let sign-in come back to this account", L"Чтобы вход вернулся в этот аккаунт"),
                              Tr(L"Signing in with Google or single sign-on finishes in the browser, and Windows sends the way back to the main account. "
                                 L"In the Settings page that opens, choose Claude Profile Switcher for CLAUDE: then it comes back to the account you started it in. This is needed once.",
@@ -312,7 +312,10 @@ namespace App {
         }
         std::thread([] {
             Profile* p = nullptr;
-            try { p = new Profile(Core::AddAccount()); } catch (...) {}
+            try { p = new Profile(Core::AddAccount()); }
+            catch (const std::wstring& e) { Core::Log(L"Add account: " + e); }
+            catch (const std::exception& e) { Core::Log(Util::Format(L"Add account: %S", e.what())); }
+            catch (...) { Core::Log(L"Add account: unknown error"); }
             PostMessageW(tray, WM_ADDED, 0, (LPARAM)p);
         }).detach();
     }
@@ -524,6 +527,9 @@ namespace App {
         AddIcon();
         RegisterPicker();
         RegisterAccounts();
+        // Keeps the claude:// handler pointing at this exe, and takes over one left by the
+        // PowerShell version; a few registry writes.
+        Core::RegisterLinks();
         WinShell::DarkMenus(Gfx::T.dark);
 
         showEvt = CreateEventW(nullptr, FALSE, FALSE, Core::ShowEvent);

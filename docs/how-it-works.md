@@ -30,7 +30,7 @@ flowchart LR
 ## Step by step
 
 1. **Finds Claude.** The Store build through the per-user package repository in the registry, the installer build through its uninstall entry. The result is cached and checked again when Claude updates.
-2. **Keeps profiles.** Each extra account is a folder in `%LOCALAPPDATA%\ClaudeProfiles`. Names, colours and the other settings sit in `settings.json` next to them.
+2. **Keeps profiles.** Each extra account is a folder in `%LOCALAPPDATA%\ClaudeProfiles`. Names, colours and the other settings sit in `settings.json` next to them. The main account's own data is wherever Claude last wrote it: `%LOCALAPPDATA%\Claude-Data\claude_<publisher>` for Claude 4.x, `%APPDATA%\Claude` or the Store package's folder for older builds.
 3. **Opens an account.** The main account starts through `shell:AppsFolder`, like the Start menu does. Others start as `Claude.exe --user-data-dir=<profile>`. If an account is already open, its window is brought forward instead.
 4. **Watches what is open.** A process snapshot plus each process's command line maps running Claude windows to profiles, on a background thread.
 5. **Fits into Windows.** Shortcuts get per-account icons drawn with Direct2D, the taskbar gets a jump list, start with Windows is one `Run` value, and the optional per-account taskbar buttons set each window's `AppUserModelID`.

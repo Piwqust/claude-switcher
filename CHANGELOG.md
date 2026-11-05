@@ -5,6 +5,19 @@ Each version's section becomes the description of its GitHub release.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Signing in to an added account works again for people who used the PowerShell version.** Windows kept sending `claude://` links, the end of every browser sign-in, to the PowerShell version's handler, which no longer exists, so the sign-in never came back. The switcher now takes that handler over and points it at itself, so the choice already made in Windows Settings keeps working.
+- **The main account is found where current Claude keeps it.** Claude 4.x moved its data to `%LOCALAPPDATA%\Claude-Data`; the switcher still looked in the old, now empty folder, so Main showed no usage or last-used time and chats couldn't be moved to or from it. Whichever known folder Claude wrote to last is used now.
+- **A Claude update is picked up at once.** The Store install is looked up on every start (one registry key) instead of trusting the cached path, which could start the previous version while its folder lingered.
+- Bringing an open account forward no longer just flashes its taskbar button when Windows' focus lock gets in the way.
+- Adding an account asks about `claude://` links every time until they're set up, instead of once ever; and a failed add now writes its reason to the error log.
+
+### Changed
+
+- The error log is appended to rather than rewritten on every line, and starts over past 256 KB.
+- `settings.json` is parsed once and re-read only when it changes, instead of on every setting lookup.
+
 ## [1.0.3] — 2026-10-27
 
 ### Fixed
