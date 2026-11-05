@@ -32,6 +32,8 @@ struct Profile {
     DWORD pid = 0;
     ULONGLONG lastUsed = 0;            // FILETIME ticks, 0 = never
     Usage usage;
+    bool wantsName = false;            // still "Account N": takes its Claude name once signed in
+    std::wstring accountName;          // that name, once Claude has it on disk
 };
 
 struct CodeSession {
@@ -120,6 +122,8 @@ namespace Core {
     bool Close(const std::wstring& id);            // ends Claude for good, tray included; false when it wasn't open
     void Restart(const std::wstring& id);          // ends the open window, if any, and starts it again
     Profile Rename(const Profile& p, const std::wstring& newName);
+    std::wstring AccountName(const std::wstring& profileDir);   // the name the account goes by in Claude, or L""
+    bool NameFromAccount(const Profile& p);        // renames a new account after p.accountName, once
     void Delete(const Profile& p);                 // throws std::wstring on refusal
 
     COLORREF ProfileColor(const std::wstring& id);

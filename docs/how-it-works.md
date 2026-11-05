@@ -72,7 +72,7 @@ A figure is shown only if it is at most 15 minutes old and its window has not re
 ## Security and privacy
 
 - **No network access.** The switcher makes no network requests at all: there is no networking code, no telemetry and no update check.
-- **Sign-ins are never touched.** Tokens, cookies and passwords are not read or copied. Each account signs in by itself in its own Claude window.
+- **Sign-ins are never touched.** Tokens, cookies and passwords are not read or copied. Each account signs in by itself in its own Claude window. To name a new account, the switcher reads only the display name Claude keeps in that profile's local cache, once, after sign-in.
 - **Claude is not modified.** Only standard Electron and Windows mechanisms; no patching, no proxy.
 - **No admin rights.** Everything goes into your user profile: `%LOCALAPPDATA%\ClaudeProfiles`, an `HKCU\…\Run` value for start with Windows, and its `claude://` handler registration under `HKCU\Software`.
 - **Built in the open.** Every release is built by [GitHub Actions](https://github.com/Piwqust/claude-switcher/actions) from this repository, with SHA-256 checksums next to the files.
@@ -90,14 +90,14 @@ Claude Profile Switcher started from [Claude Code Desktop Switcher](https://gith
 | Window appears in | about 10 s | **about 75 ms** |
 | Memory | about 126 MB | **about 16 MB** |
 | Install | a PowerShell command with `-ExecutionPolicy Bypass` | run the exe |
-| Builds | — | x64 and ARM64 |
+| Builds | No | x64 and ARM64 |
 | Interface | English, light only | English and Russian, dark and light, Mica |
-| Ask at sign-in, countdown | — | ✓ |
-| Global shortcuts | — | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd>, <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>1</kbd>…<kbd>9</kbd> |
-| Usage on the cards | — | ✓ |
-| Open several accounts at once | — | ✓ |
+| Ask at sign-in, countdown | No | ✓ |
+| Global shortcuts | No | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd>, <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>1</kbd>…<kbd>9</kbd> |
+| Usage on the cards | No | ✓ |
+| Open several accounts at once | No | ✓ |
 | Tray | right-click menu | flyout and menu |
-| Jump list, a taskbar button per account | — | ✓ |
+| Jump list, a taskbar button per account | No | ✓ |
 | Coloured shortcut icons, moving Code chats | ✓ | ✓ |
 
 <sub>Measured on the same Windows 11 PC with three accounts: time from starting the program to a visible window, and private memory once it settles.</sub>

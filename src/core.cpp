@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cwctype>
 #include <cstdarg>
+#include <cstring>
 #include <set>
 
 // ================================================================ paths
@@ -521,9 +522,15 @@ namespace Core {
         return best;
     }
 
+    static bool WantsName(const Profile& p, const std::set<std::wstring>& done);
+
     std::vector<Profile> ProfileList(bool withStatus) {
         std::map<std::wstring, DWORD> running;
-        if (withStatus) running = RunningMap();
+        std::set<std::wstring> named;
+        if (withStatus) {
+            running = RunningMap();
+            for (auto& id : Settings::List(L"AutoNamed")) named.insert(Util::Lower(id));
+        }
         auto labels = Labels();
         std::vector<std::wstring> ids{ DefaultId };
         std::vector<std::wstring> found;
@@ -546,6 +553,7 @@ namespace Core {
             auto r = running.find(Key(p.path)); if (r != running.end()) p.pid = r->second;
             p.lastUsed = LastUsed(p.path);
             p.usage = ReadUsage(p.path);
+            if (withStatus && !Paths::Demo && WantsName(p, named)) { p.wantsName = true; p.accountName = AccountName(p.path); }
             out.push_back(p);
         }
         return out;
@@ -567,7 +575,7 @@ namespace Core {
         if (name[0] == L'.' || name.back() == L'.' || name.back() == L' ') return Tr(L"A name can't start with a dot or end with a dot or a space", L"Имя не может начинаться с точки или заканчиваться точкой или пробелом");
         static const wchar_t* reserved[] = { L"CON", L"PRN", L"AUX", L"NUL", L"COM1", L"COM2", L"COM3", L"COM4", L"LPT1", L"LPT2", L"LPT3" };
         auto base = name.substr(0, name.find(L'.'));
-        for (auto r : reserved) if (_wcsicmp(base.c_str(), r) == 0) return Util::Format(Tr(L"%s is a name Windows reserves", L"%s — зарезервированное имя Windows"), Util::Q(name).c_str());
+        for (auto r : reserved) if (_wcsicmp(base.c_str(), r) == 0) return Util::Format(Tr(L"%s is a name Windows reserves", L"Имя %s зарезервировано Windows"), Util::Q(name).c_str());
         if (name.size() > 40) return Tr(L"The name is too long, 40 characters at most", L"Имя слишком длинное, максимум 40 символов");
         if (_wcsicmp(name.c_str(), L"Add account") == 0) return Tr(L"The switcher's own shortcut already uses this name", L"Это имя занято ярлыком самого переключателя");
         for (auto& p : ProfileList(false)) {
@@ -1030,6 +1038,191 @@ namespace Core {
         u.week = weekLive ? week : -1;
         u.known = fiveLive || weekLive;
         return u;
+    }
+
+    // ============================================================ account names
+
+    /*
+        The name an account goes by in Claude, so a new account can be named after it. Claude's
+        web side caches the signed-in account in IndexedDB, as Chromium's serialized form of
+        { uuid, email_address, full_name, display_name, ... }. Big values are written to blob
+        files, Snappy-compressed. The object belonging to the profile is the one carrying the
+        uuid in its config.json (lastKnownAccountUuid). Only display_name and full_name are
+        read; no token, cookie or e-mail address is.
+    */
+    static bool Varint(const std::string& b, size_t& i, ULONGLONG& out) {
+        out = 0;
+        for (int shift = 0; i < b.size() && shift < 64; shift += 7) {
+            unsigned char c = b[i++];
+            out |= (ULONGLONG)(c & 0x7f) << shift;
+            if (c < 0x80) return true;
+        }
+        return false;
+    }
+
+    static bool Unsnappy(const std::string& in, size_t i, std::string& out) {
+        ULONGLONG n;
+        if (!Varint(in, i, n) || n > (512ull << 20)) return false;
+        out.clear(); out.reserve((size_t)n);
+        while (i < in.size() && out.size() < n) {
+            unsigned char t = in[i++];
+            size_t len, off = 0;
+            switch (t & 3) {
+            case 0:
+                len = t >> 2;
+                if (len >= 60) {
+                    size_t bytes = len - 59; len = 0;
+                    if (i + bytes > in.size()) return false;
+                    for (size_t k = 0; k < bytes; k++) len |= (size_t)(unsigned char)in[i + k] << (8 * k);
+                    i += bytes;
+                }
+                len++;
+                if (i + len > in.size()) return false;
+                out.append(in, i, len); i += len;
+                continue;
+            case 1:
+                if (i >= in.size()) return false;
+                len = ((t >> 2) & 7) + 4; off = ((size_t)(t >> 5) << 8) | (unsigned char)in[i++];
+                break;
+            case 2:
+                if (i + 2 > in.size()) return false;
+                len = (t >> 2) + 1; off = (unsigned char)in[i] | ((size_t)(unsigned char)in[i + 1] << 8); i += 2;
+                break;
+            default:
+                if (i + 4 > in.size()) return false;
+                len = (t >> 2) + 1;
+                for (int k = 0; k < 4; k++) off |= (size_t)(unsigned char)in[i + k] << (8 * k);
+                i += 4;
+            }
+            if (!off || off > out.size()) return false;
+            for (size_t k = 0; k < len; k++) out.push_back(out[out.size() - off]);
+        }
+        return out.size() == n;
+    }
+
+    // A string value of Chromium's serialization at i: Latin-1, UTF-16 or UTF-8.
+    static std::wstring V8String(const std::string& b, size_t i) {
+        while (i < b.size() && b[i] == 0) i++;   // padding before two-byte strings
+        if (i >= b.size()) return L"";
+        char tag = b[i++];
+        ULONGLONG len;
+        if (!Varint(b, i, len) || len > 1024 || i + len > b.size()) return L"";
+        std::wstring s;
+        if (tag == '"') for (size_t k = 0; k < len; k++) s += (wchar_t)(unsigned char)b[i + k];
+        else if (tag == 'c') for (size_t k = 0; k + 1 < len; k += 2) s += (wchar_t)((unsigned char)b[i + k] | ((unsigned char)b[i + k + 1] << 8));
+        else if (tag == 'S') {
+            int n = MultiByteToWideChar(CP_UTF8, 0, b.data() + i, (int)len, nullptr, 0);
+            s.resize(n); if (n) MultiByteToWideChar(CP_UTF8, 0, b.data() + i, (int)len, &s[0], n);
+        }
+        return s;
+    }
+
+    static std::wstring NameIn(const std::string& b, const std::string& uuid) {
+        const std::string anchor = std::string("\"\x04uuid\"\x24", 7) + uuid;
+        for (size_t at = b.find(anchor); at != std::string::npos; at = b.find(anchor, at + 1)) {
+            // The object's own fields follow within a few hundred bytes, before the next uuid.
+            size_t end = std::min(b.size(), at + anchor.size() + 1024);
+            size_t next = b.find("\"\x04uuid\"", at + anchor.size());
+            if (next != std::string::npos) end = std::min(end, next);
+            for (const char* key : { "\"\x0c" "display_name", "\"\x09" "full_name" }) {
+                auto k = b.find(key, at + anchor.size());
+                if (k == std::string::npos || k >= end) continue;
+                auto name = V8String(b, k + strlen(key));
+                if (name.find_first_not_of(L' ') != std::wstring::npos) return name;
+            }
+        }
+        return L"";
+    }
+
+    static void FilesUnder(const std::wstring& dir, const wchar_t* pattern, int depth, std::vector<std::wstring>& out) {
+        WIN32_FIND_DATAW fd; HANDLE h = FindFirstFileW((dir + L"\\*").c_str(), &fd);
+        if (h == INVALID_HANDLE_VALUE) return;
+        do {
+            if (fd.cFileName[0] == L'.') continue;
+            auto path = dir + L"\\" + fd.cFileName;
+            if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) { if (depth > 0) FilesUnder(path, pattern, depth - 1, out); }
+            else if (PathMatchSpecW(fd.cFileName, pattern)) out.push_back(path);
+        } while (FindNextFileW(h, &fd));
+        FindClose(h);
+    }
+
+    static std::string ReadBytes(const std::wstring& path) {
+        HANDLE h = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, 0, nullptr);
+        if (h == INVALID_HANDLE_VALUE) return "";
+        LARGE_INTEGER size{}; GetFileSizeEx(h, &size);
+        std::string b((size_t)std::min<LONGLONG>(size.QuadPart, 64ll << 20), '\0');
+        DWORD got = 0;
+        if (!b.empty()) ReadFile(h, &b[0], (DWORD)b.size(), &got, nullptr);
+        CloseHandle(h);
+        b.resize(got);
+        return b;
+    }
+
+    std::wstring AccountName(const std::wstring& dir) {
+        json::Value cfg;
+        json::Parser::Parse(Util::ReadText(dir + L"\\config.json", true), cfg);
+        auto uuid = cfg.Str(L"lastKnownAccountUuid");
+        if (uuid.size() != 36) return L"";
+        std::string id;
+        for (wchar_t c : uuid) id += (char)c;
+
+        auto idb = dir + L"\\IndexedDB\\https_claude.ai_0.indexeddb";
+        std::vector<std::wstring> files;
+        FilesUnder(idb + L".blob", L"*", 3, files);
+        FilesUnder(idb + L".leveldb", L"*.log", 0, files);
+        ULONGLONG stamp = Util::FileTime(dir + L"\\config.json");
+        for (auto& f : files) stamp = std::max(stamp, Util::FileTime(f));
+
+        // Looked at again only when one of those files changes.
+        struct Seen { ULONGLONG stamp; std::wstring name; };
+        static std::map<std::wstring, Seen> seen;
+        auto key = Key(dir);
+        auto s = seen.find(key);
+        if (s != seen.end() && s->second.stamp == stamp) return s->second.name;
+
+        std::wstring name;
+        for (auto& f : files) {
+            auto b = ReadBytes(f);
+            // A blob is Blink's envelope (FF <version>) then 02 for Snappy-compressed.
+            std::string plain;
+            if (b.size() > 3 && (unsigned char)b[0] == 0xFF && b[2] == 0x02 && Unsnappy(b, 3, plain)) b.swap(plain);
+            name = NameIn(b, id);
+            if (!name.empty()) break;
+        }
+        seen[key] = { stamp, name };
+        return name;
+    }
+
+    // A label from a Claude name: what a profile name may not contain is dropped, and a name
+    // another account already has gets a number.
+    static std::wstring LabelFrom(const std::wstring& raw, const std::wstring& exceptId) {
+        std::wstring s;
+        for (wchar_t c : raw) if (c >= 0x20 && !wcschr(L"\\/:*?\"<>|", c)) s += c;
+        while (!s.empty() && (s.front() == L' ' || s.front() == L'.')) s.erase(0, 1);
+        if (s.size() > 36) s.resize(36);
+        while (!s.empty() && (s.back() == L' ' || s.back() == L'.')) s.pop_back();
+        if (s.empty()) return L"";
+        if (ValidateName(s, exceptId).empty()) return s;
+        for (int n = 2; n < 10; n++) { auto t = Util::Format(L"%s %d", s.c_str(), n); if (ValidateName(t, exceptId).empty()) return t; }
+        return L"";
+    }
+
+    // Accounts still called "Account N" by the switcher, never named by hand nor named before.
+    static bool WantsName(const Profile& p, const std::set<std::wstring>& done) {
+        if (p.isDefault || p.name != p.id || done.count(Util::Lower(p.id))) return false;
+        if (p.id.rfind(L"Account ", 0) != 0 || p.id.size() == 8) return false;
+        return p.id.find_first_not_of(L"0123456789", 8) == std::wstring::npos;
+    }
+
+    bool NameFromAccount(const Profile& p) {
+        if (p.accountName.empty()) return false;
+        auto done = Settings::List(L"AutoNamed");
+        done.push_back(p.id);
+        Settings::SetList(L"AutoNamed", done);   // once only, even if the name doesn't fit
+        auto label = LabelFrom(p.accountName, p.id);
+        if (label.empty()) return false;
+        Rename(p, label);
+        return true;
     }
 
     // Appended, not rewritten, and started over once it passes 256 KB.

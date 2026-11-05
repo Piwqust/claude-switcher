@@ -18,7 +18,7 @@ namespace {
             Create(Title(), WS_OVERLAPPEDWINDOW & ~WS_MAXIMIZEBOX, 0, 600, 720);
         }
 
-        static const wchar_t* Title() { return Tr(L"Settings — Claude Accounts", L"Настройки — Аккаунты Claude"); }
+        static const wchar_t* Title() { return Tr(L"Claude Accounts Settings", L"Настройки аккаунтов Claude"); }
         float Wd() { return Client().w; }
 
         // A Windows 11 settings row: title and description on the left, a control on the right.
@@ -100,7 +100,7 @@ namespace {
             y += Section(y, Tr(L"Quick access", L"Быстрый доступ"));
             {
                 auto hk = App::Hotkey();
-                std::wstring desc = recording ? Tr(L"Press a shortcut, for example Ctrl + Alt + C. Esc cancels", L"Нажмите сочетание, например Ctrl + Alt + C. Esc — отмена")
+                std::wstring desc = recording ? Tr(L"Press a shortcut, for example Ctrl + Alt + C. Esc cancels", L"Нажмите сочетание, например Ctrl + Alt + C. Esc отменяет")
                                   : !hotkeyNote.empty() ? hotkeyNote
                                   : App::HotkeyFailed() ? Tr(L"Another app already uses this shortcut, choose a different one", L"Это сочетание занято другой программой, выберите другое")
                                   : Tr(L"Brings up the account picker from any app", L"Вызывает окно выбора из любой программы");
@@ -119,7 +119,7 @@ namespace {
                     desc = Tr(L"Taken by another app:", L"Заняты другой программой:");
                     for (size_t i = 0; i < taken.size(); i++) desc += (i ? L"," : L"") + Util::Format(L" Ctrl + Alt + %d", taken[i]);
                 } else {
-                    desc = Tr(L"Ctrl + Alt + 1 opens the first account, Ctrl + Alt + 2 the second, and so on. Works from any app", L"Ctrl + Alt + 1 открывает первый аккаунт, Ctrl + Alt + 2 — второй, и так далее. Работает из любой программы");
+                    desc = Tr(L"Ctrl + Alt + 1 opens the first account, Ctrl + Alt + 2 the second, and so on. Works from any app", L"Ctrl + Alt + 1 открывает первый аккаунт, Ctrl + Alt + 2 открывает второй, и так далее. Работает из любой программы");
                 }
                 float h = Card(y, Tr(L"Ctrl + Alt + number opens an account", L"Ctrl + Alt + цифра открывает аккаунт"), desc, 40, 68, !taken.empty() && App::AccountHotkeys() ? T.danger : D2D1_COLOR_F{});
                 Toggle(Id("acchk"), w - Pad - 16 - 40, y + h / 2 - 10, App::AccountHotkeys(), [this] { App::SetAccountHotkeys(!App::AccountHotkeys()); Invalidate(); });
@@ -136,7 +136,7 @@ namespace {
             {
                 // Asking Windows is a COM call, too slow for every frame of an animation.
                 if (GetTickCount64() - linksAt > 1000) { links = Core::LinksRouted(); linksAt = GetTickCount64(); }
-                float h = Card(y, Tr(L"claude:// links go to the right account", L"Ссылки claude:// — в нужный аккаунт"),
+                float h = Card(y, Tr(L"claude:// links go to the right account", L"Ссылки claude:// попадают в нужный аккаунт"),
                                links ? Tr(L"On. A sign-in finished in the browser comes back to the account you started it in",
                                           L"Включено. Вход, завершённый в браузере, вернётся в тот аккаунт, из которого он начат")
                                      : Tr(L"Without it, signing in with Google or single sign-on in an extra account comes back to the main one. Choose Claude Profile Switcher for CLAUDE in Windows Settings",

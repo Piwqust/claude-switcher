@@ -5,6 +5,10 @@ Each version's section becomes the description of its GitHub release.
 
 ## [Unreleased]
 
+### Added
+
+- **A new account names itself.** Once you sign in, its card takes the name the account goes by in Claude instead of staying "Account 2". It happens once; renaming it yourself (F2) always wins. Only the display name is read, from Claude's local cache in that profile.
+
 ### Fixed
 
 - **Signing in to an added account works again for people who used the PowerShell version.** Windows kept sending `claude://` links, the end of every browser sign-in, to the PowerShell version's handler, which no longer exists, so the sign-in never came back. The switcher now takes that handler over and points it at itself, so the choice already made in Windows Settings keeps working.
@@ -18,21 +22,21 @@ Each version's section becomes the description of its GitHub release.
 - The error log is appended to rather than rewritten on every line, and starts over past 256 KB.
 - `settings.json` is parsed once and re-read only when it changes, instead of on every setting lookup.
 
-## [1.0.3] — 2026-10-27
+## [1.0.3] - 2026-10-27
 
 ### Fixed
 
 - **Signing in to an extra account with Google or single sign-on now comes back to that account**, not to the main one. Windows sends `claude://` links to the Store package, so the switcher can now handle them instead: choose it once in Settings → Sign-in and links (adding an account offers this too), and each link goes to the account whose window you used last.
 - Restarting or closing Claude no longer freezes Windows for a couple of seconds when Claude has many MCP servers running. The processes are now ended a few at a time instead of all at once.
 
-## [1.0.2] — 2026-10-20
+## [1.0.2] - 2026-10-20
 
 ### New
 
 - **A restart button in the tray flyout** next to every open account.
 - **Close Claude for good**, tray icon included: ✕ in the tray flyout, Close Claude in the tray menu (one account or all open ones) and in a card's ⋯ menu, or `--close "Work"` on the command line.
 
-## [1.0.1] — 2026-10-20
+## [1.0.1] - 2026-10-20
 
 ### New
 
@@ -42,7 +46,7 @@ Each version's section becomes the description of its GitHub release.
 
 - An account started with `"--user-data-dir=…"` quoted as a whole was not recognised as open.
 
-## [1.0.0] — 2026-10-16
+## [1.0.0] - 2026-10-16
 
 The first release. Claude Profile Switcher is built on [Claude Code Desktop Switcher](https://github.com/PriyanshuGeTRekT/Claude-Code-Desktop-Switcher) 2.0 by @PriyanshuGeTRekT, a PowerShell script, and rewrites it from scratch as a native C++ app. Accounts, names, colours and shortcuts from that switcher carry over: just run the new exe.
 

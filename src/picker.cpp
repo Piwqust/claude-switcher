@@ -100,7 +100,9 @@ namespace {
             } else {
                 auto it = App::Find(newAccount);
                 title = Tr(L"Sign in in the new Claude window", L"Войдите в аккаунт в новом окне Claude");
-                text = Util::Format(Tr(L"The name %s is selected: type your own, like “Work”", L"Имя %s уже выделено: впишите своё, например «Работа»"), Util::Q(it ? it->name : newAccount).c_str());
+                text = it && !it->p.wantsName && it->name != it->p.id
+                    ? Util::Format(Tr(L"Signed in. It's called %s now; press F2 to rename it", L"Вход выполнен. Теперь он называется %s, F2 переименует"), Util::Q(it->name).c_str())
+                    : Tr(L"Once you're signed in, the card takes your Claude name. Press F2 to choose your own", L"Когда вы войдёте, карточка получит ваше имя в Claude. Нажмите F2, чтобы задать своё");
                 button = Tr(L"Done", L"Готово");
             }
             float bw = Measure(button, Font(14)).width + 26;
@@ -245,7 +247,7 @@ namespace {
                 Text(Tr(L"Clear", L"Сбросить"), clear, Font(14), T.text2, Align::Center);
                 Hit(Id("clear"), clear, [this] { ClearSelection(); });
             } else {
-                auto hint = Tr(L"Press a number to open, Ctrl+click to pick several", L"Цифра — открыть, Ctrl+клик — выбрать несколько");
+                auto hint = Tr(L"Press a number to open, Ctrl+click to pick several", L"Цифра открывает аккаунт, Ctrl+клик выбирает несколько");
                 Text(hint, { W - Pad - 300, y, 300, 32 }, Font(12), T.text3, Align::Right);
             }
             contentHeight = y + 32 + 22;

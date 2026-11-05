@@ -198,6 +198,13 @@ namespace App {
             next.push_back(it);
         }
         items.swap(next);
+        // A new account takes the name it goes by in Claude as soon as Claude has saved it.
+        bool renamed = false;
+        if (statusKnown) for (auto& it : items) if (!it.p.accountName.empty()) {
+            try { renamed |= Core::NameFromAccount(it.p); }
+            catch (const std::wstring& e) { Core::Log(L"Naming " + it.p.id + L": " + e); }
+        }
+        if (renamed) { Refresh(); return; }
         WinShell::UpdateJumpList(Profiles());
         if (statusKnown) WinShell::SplitUpdate(Profiles(), SplitTaskbar());
         RedrawAll();
@@ -476,7 +483,6 @@ namespace App {
             if (auto it = Find(id)) { it->launching = true; it->launchAt = GetTickCount64(); }
             ShowPicker();
             Picker::NewAccountHint(id);
-            BeginRename(id);
             Refresh();
             return 0;
         }
@@ -491,7 +497,8 @@ namespace App {
         case WM_TIMER:
             if (w == TimerRefresh) {
                 bool busy = Picker::Visible() || Flyout::Visible() || SettingsWin::Visible();
-                for (auto& i : items) busy |= i.launching || i.closing;
+                // An open account waiting for its name is watched until it has signed in.
+                for (auto& i : items) busy |= i.launching || i.closing || (i.p.wantsName && i.running());
                 if (busy) Refresh();
             } else if (w == TimerSoon) {
                 KillTimer(h, TimerSoon);

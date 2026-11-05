@@ -66,7 +66,7 @@ Keep text short and plain: buttons name the action ("Open now"), labels name the
 
 ## Releasing (maintainers)
 
-1. Move the "Unreleased" entries into a new `## [X.Y.Z] — YYYY-MM-DD` section in CHANGELOG.md.
+1. Move the "Unreleased" entries into a new `## [X.Y.Z] - YYYY-MM-DD` section in CHANGELOG.md.
 2. Bump the version in `src/app.rc`, `src/app.manifest` and the About text in `src/settings.cpp`.
 3. Create and push a tag:
    ```bash

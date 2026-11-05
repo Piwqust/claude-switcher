@@ -307,7 +307,7 @@ namespace WinShell {
         // Relaunch properties first: pinning the separate button reopens this account.
         if (!SetProps(h, { { PKEY_AppUserModel_RelaunchCommand, L"\"" + Paths::Launcher() + L"\" --launch \"" + profile + L"\"" },
                            { PKEY_AppUserModel_RelaunchIconResource, t->second.icon + L",0" },
-                           { PKEY_AppUserModel_RelaunchDisplayNameResource, L"Claude — " + t->second.name },
+                           { PKEY_AppUserModel_RelaunchDisplayNameResource, L"Claude (" + t->second.name + L")" },
                            { PKEY_AppUserModel_ID, AppId(profile) } })) return;
         Applied rec = a != applied.end() ? a->second : Applied{};
         if (a == applied.end()) { rec.oldBig = (HICON)Send(h, WM_GETICON, ICON_BIG, 0); rec.oldSmall = (HICON)Send(h, WM_GETICON, ICON_SMALL, 0); }
