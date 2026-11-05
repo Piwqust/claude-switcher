@@ -26,9 +26,13 @@ namespace {
             SetWindowPos(hwnd, nullptr, (ref.left + ref.right - ww) / 2, (ref.top + ref.bottom - wh) / 2, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
             if (owner) EnableWindow(owner, FALSE);
             Show(true);
+            // GetMessage takes WM_QUIT off the queue and returns 0, so it is posted again for
+            // the main loop; otherwise quitting while a dialog is open would be lost.
             MSG m;
-            while (!done && GetMessageW(&m, nullptr, 0, 0)) {
-                if (m.message == WM_QUIT) { PostQuitMessage((int)m.wParam); break; }
+            while (!done) {
+                BOOL got = GetMessageW(&m, nullptr, 0, 0);
+                if (got == 0) { PostQuitMessage((int)m.wParam); break; }
+                if (got < 0) break;
                 TranslateMessage(&m); DispatchMessageW(&m);
             }
             if (owner) { EnableWindow(owner, TRUE); SetForegroundWindow(owner); }

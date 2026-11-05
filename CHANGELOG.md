@@ -11,6 +11,12 @@ Each version's section becomes the description of its GitHub release.
 
 ### Fixed
 
+- **Deleting an account works.** Claude unpacks files into each profile with paths longer than Windows' classic 260-character limit, which the shell's delete can't remove: it stopped half way, said nothing, and the account stayed. Profiles are now deleted with long-path support, and the folder is moved aside first, so a delete either completes or touches nothing.
+- Deleting an open account closes its Claude window first instead of refusing, and also ends anything still running from inside its folder, such as Claude Code. If another program still holds a file, the message names it.
+- Deleting runs in the background with a "Deleting…" status instead of freezing the window, and also clears the account's colour, auto-open and auto-name entries. Its icon files are now removed too; they used to pile up.
+- Quitting while a dialog was open did nothing; it now quits.
+- Account names Windows reserves (COM5 to COM9, LPT4 to LPT9, CONIN$, CONOUT$) are refused like the others.
+- The About card shows the real version instead of a fixed "1.0".
 - **Signing in to an added account works again for people who used the PowerShell version.** Windows kept sending `claude://` links, the end of every browser sign-in, to the PowerShell version's handler, which no longer exists, so the sign-in never came back. The switcher now takes that handler over and points it at itself, so the choice already made in Windows Settings keeps working.
 - **The main account is found where current Claude keeps it.** Claude 4.x moved its data to `%LOCALAPPDATA%\Claude-Data`; the switcher still looked in the old, now empty folder, so Main showed no usage or last-used time and chats couldn't be moved to or from it. Whichever known folder Claude wrote to last is used now.
 - **A Claude update is picked up at once.** The Store install is looked up on every start (one registry key) instead of trusting the cached path, which could start the previous version while its folder lingered.
@@ -20,6 +26,7 @@ Each version's section becomes the description of its GitHub release.
 ### Changed
 
 - The error log is appended to rather than rewritten on every line, and starts over past 256 KB.
+- Usage files, including Claude Code's large `.claude.json`, are read only for the cards and parsed again only when they change, instead of for every name lookup and every refresh.
 - `settings.json` is parsed once and re-read only when it changes, instead of on every setting lookup.
 
 ## [1.0.3] - 2026-10-27

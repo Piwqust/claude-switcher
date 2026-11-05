@@ -43,6 +43,8 @@ static bool EnsureClaude(bool allowCache) {
 static int Run() {
     int argc = 0;
     auto argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+    struct Free { LPWSTR* p; ~Free() { LocalFree(p); } } freeArgs{ argv };
+    if (!argv) argc = 0;
     auto flag = [&](const wchar_t* n) { for (int i = 1; i < argc; i++) if (_wcsicmp(argv[i], n) == 0) return true; return false; };
     auto arg = [&](const wchar_t* n) -> std::wstring { for (int i = 1; i + 1 < argc; i++) if (_wcsicmp(argv[i], n) == 0) return argv[i + 1]; return L""; };
 

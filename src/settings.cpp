@@ -1,4 +1,5 @@
 #include "app.h"
+#include "version.h"
 #include <shellapi.h>
 
 using namespace Gfx;
@@ -185,7 +186,7 @@ namespace {
             y += Section(y, Tr(L"About", L"О программе"));
             {
                 auto title = L"Claude " + (Core::App.version == L"unknown" ? L"" : Core::App.version + L" ") + L"· " + (Core::App.kind == L"Msix" ? L"Microsoft Store" : Tr(L"installer", L"установщик"));
-                float h = Card(y, title, Tr(L"Switcher 1.0. Profiles live in ", L"Переключатель 1.0. Профили лежат в ") + Paths::Root, 150);
+                float h = Card(y, title, Tr(L"Switcher " CPS_VERSION_W L". Profiles live in ", L"Переключатель " CPS_VERSION_W L". Профили лежат в ") + Paths::Root, 150);
                 Button(Id("folder"), { w - Pad - 16 - 150, y + h / 2 - 16, 150, 32 }, Tr(L"Profiles folder", L"Папка профилей"), false, [] {
                     ShellExecuteW(nullptr, L"open", Paths::Root.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
                 });

@@ -65,13 +65,13 @@ namespace {
                 auto pid = it.p.id;
                 Row(id, y, [this, pid] { Hide(); App::Launch({ pid }, false); });
                 // An open account gets restart and close buttons between its text and the shortcut digit.
-                bool live = it.running() && !it.launching && !it.closing;
+                bool live = it.running() && !it.launching && !it.closing && !it.deleting;
                 float tw = live ? W - 172 : W - 110;
                 Avatar(30, y + RowH / 2, 32, it.letters, it.color, it.p.isDefault, it.running(), T.dark ? Rgba(0x2C2C2C) : Rgba(0xF3F3F3));
                 Text(it.name, { 56, y + 8, tw, 20 }, Font(14, DWRITE_FONT_WEIGHT_SEMI_BOLD), T.text);
                 auto status = it.Status();
                 float sw = Measure(status, Font(12)).width;
-                Text(status, { 56, y + 27, tw, 18 }, Font(12), it.launching || it.closing ? T.accentText : it.running() ? T.success : T.text2);
+                Text(status, { 56, y + 27, tw, 18 }, Font(12), it.launching || it.closing || it.deleting ? T.accentText : it.running() ? T.success : T.text2);
                 auto lim = Limits(it, tw - sw - 6);
                 if (!lim.empty()) Text(L"·  " + lim, { 56 + sw + 6, y + 27, tw - sw - 6, 18 }, Font(12), T.text3);
                 if (live) {

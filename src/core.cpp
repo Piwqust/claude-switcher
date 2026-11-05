@@ -9,6 +9,8 @@
 #include <cwctype>
 #include <cstdarg>
 #include <cstring>
+#include <restartmanager.h>
+#include <mutex>
 #include <set>
 
 // ================================================================ paths
@@ -552,7 +554,8 @@ namespace Core {
             p.name = l != labels.end() && !l->second.empty() ? l->second : id;
             auto r = running.find(Key(p.path)); if (r != running.end()) p.pid = r->second;
             p.lastUsed = LastUsed(p.path);
-            p.usage = ReadUsage(p.path);
+            // Usage is for showing; lookups by name (Resolve, ValidateName) skip the file reads.
+            if (withStatus) p.usage = ReadUsage(p.path);
             if (withStatus && !Paths::Demo && WantsName(p, named)) { p.wantsName = true; p.accountName = AccountName(p.path); }
             out.push_back(p);
         }
@@ -573,8 +576,11 @@ namespace Core {
         if (name.find_first_of(L"\\/:*?\"<>|") != std::wstring::npos) return Tr(L"A name can't contain \\ / : * ? \" < > |", L"В имени не может быть \\ / : * ? \" < > |");
         for (wchar_t c : name) if (c < 0x20) return Tr(L"The name contains control characters", L"В имени есть служебные символы");
         if (name[0] == L'.' || name.back() == L'.' || name.back() == L' ') return Tr(L"A name can't start with a dot or end with a dot or a space", L"Имя не может начинаться с точки или заканчиваться точкой или пробелом");
-        static const wchar_t* reserved[] = { L"CON", L"PRN", L"AUX", L"NUL", L"COM1", L"COM2", L"COM3", L"COM4", L"LPT1", L"LPT2", L"LPT3" };
+        static const wchar_t* reserved[] = { L"CON", L"PRN", L"AUX", L"NUL", L"CONIN$", L"CONOUT$",
+            L"COM1", L"COM2", L"COM3", L"COM4", L"COM5", L"COM6", L"COM7", L"COM8", L"COM9",
+            L"LPT1", L"LPT2", L"LPT3", L"LPT4", L"LPT5", L"LPT6", L"LPT7", L"LPT8", L"LPT9" };
         auto base = name.substr(0, name.find(L'.'));
+        while (!base.empty() && base.back() == L' ') base.pop_back();   // "CON .txt" is still CON
         for (auto r : reserved) if (_wcsicmp(base.c_str(), r) == 0) return Util::Format(Tr(L"%s is a name Windows reserves", L"Имя %s зарезервировано Windows"), Util::Q(name).c_str());
         if (name.size() > 40) return Tr(L"The name is too long, 40 characters at most", L"Имя слишком длинное, максимум 40 символов");
         if (_wcsicmp(name.c_str(), L"Add account") == 0) return Tr(L"The switcher's own shortcut already uses this name", L"Это имя занято ярлыком самого переключателя");
@@ -789,28 +795,128 @@ namespace Core {
         auto removed = RemoveShortcuts(p.name);
         SetLabel(p.id, newName);
         Profile renamed; Resolve(p.id, renamed);
-        renamed.pid = p.pid; renamed.usage = p.usage;
+        renamed.pid = p.pid; renamed.usage = p.usage; renamed.lastUsed = p.lastUsed;
         // Shortcuts are named after the label, so put back any that were just taken away.
         for (auto& lnk : removed) CreateProfileShortcut(renamed, Util::Parent(lnk));
         return renamed;
     }
 
-    static void RemoveTree(const std::wstring& dir) {
-        std::wstring from = dir; from.push_back(L'\0');
-        SHFILEOPSTRUCTW op{}; op.wFunc = FO_DELETE; op.pFrom = from.c_str();
-        op.fFlags = FOF_NO_UI;
-        SHFileOperationW(&op);
+    // ------------------------------------------------------------ deleting a profile
+
+    // "\\?\" in front lifts the 260-character limit. Claude unpacks skills and Claude Code
+    // into its profile with paths longer than that, which the shell's own delete
+    // (SHFileOperation) cannot remove: it used to stop half way and leave the account behind.
+    static std::wstring Long(const std::wstring& path) { return path.rfind(L"\\\\?\\", 0) == 0 ? path : L"\\\\?\\" + path; }
+
+    // Removes a folder and everything in it. Links inside are removed, never followed.
+    // Returns false if anything is left.
+    static bool RemoveTree(const std::wstring& dir) {
+        bool ok = true;
+        WIN32_FIND_DATAW fd;
+        HANDLE h = FindFirstFileExW(Long(dir + L"\\*").c_str(), FindExInfoBasic, &fd, FindExSearchNameMatch, nullptr, FIND_FIRST_EX_LARGE_FETCH);
+        if (h != INVALID_HANDLE_VALUE) {
+            do {
+                if (!wcscmp(fd.cFileName, L".") || !wcscmp(fd.cFileName, L"..")) continue;
+                auto full = dir + L"\\" + fd.cFileName;
+                DWORD a = fd.dwFileAttributes;
+                if (a & FILE_ATTRIBUTE_READONLY) SetFileAttributesW(Long(full).c_str(), a & ~FILE_ATTRIBUTE_READONLY);
+                if (a & FILE_ATTRIBUTE_DIRECTORY) ok &= (a & FILE_ATTRIBUTE_REPARSE_POINT) ? RemoveDirectoryW(Long(full).c_str()) != 0 : RemoveTree(full);
+                else ok &= DeleteFileW(Long(full).c_str()) != 0;
+            } while (FindNextFileW(h, &fd));
+            FindClose(h);
+        }
+        DWORD a = GetFileAttributesW(Long(dir).c_str());
+        if (a != INVALID_FILE_ATTRIBUTES && (a & FILE_ATTRIBUTE_READONLY)) SetFileAttributesW(Long(dir).c_str(), a & ~FILE_ATTRIBUTE_READONLY);
+        return RemoveDirectoryW(Long(dir).c_str()) != 0 && ok;
     }
 
-    static void RemoveIcons(const std::wstring& id) {
-        WIN32_FIND_DATAW fd; HANDLE h = FindFirstFileW((Paths::IconDir + L"\\*.ico").c_str(), &fd);
+    // Processes started from inside a profile folder: Claude Code's own CLI and the helpers
+    // Claude unpacks there. They can outlive the Claude window and keep its files open.
+    static std::vector<DWORD> ProcessesInside(const std::wstring& dir) {
+        std::vector<DWORD> out;
+        auto prefix = Key(dir) + L"\\";
+        HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+        if (snap == INVALID_HANDLE_VALUE) return out;
+        PROCESSENTRY32W pe{ sizeof pe };
+        for (BOOL ok = Process32FirstW(snap, &pe); ok; ok = Process32NextW(snap, &pe)) {
+            if (pe.th32ProcessID == GetCurrentProcessId()) continue;
+            auto image = Util::Lower(Util::ImageOf(pe.th32ProcessID));
+            if (image.rfind(prefix, 0) == 0) out.push_back(pe.th32ProcessID);
+        }
+        CloseHandle(snap);
+        return out;
+    }
+
+    static void EndProcesses(const std::vector<DWORD>& pids) {
+        std::vector<HANDLE> ending;
+        for (DWORD pid : pids)
+            if (HANDLE h = OpenProcess(PROCESS_TERMINATE | SYNCHRONIZE, FALSE, pid)) {
+                if (TerminateProcess(h, 0)) ending.push_back(h); else CloseHandle(h);
+            }
+        for (size_t k = 0; k < ending.size(); k += MAXIMUM_WAIT_OBJECTS)
+            WaitForMultipleObjects((DWORD)std::min<size_t>(MAXIMUM_WAIT_OBJECTS, ending.size() - k), ending.data() + k, TRUE, 5000);
+        for (HANDLE h : ending) CloseHandle(h);
+    }
+
+    // The programs holding files in a folder open, by name, from the Restart Manager: the
+    // same list Windows shows when a file can't be deleted because it is in use.
+    static std::wstring WhoUses(const std::wstring& dir) {
+        std::vector<std::wstring> files;
+        std::function<void(const std::wstring&)> walk = [&](const std::wstring& d) {
+            WIN32_FIND_DATAW fd;
+            HANDLE h = FindFirstFileExW(Long(d + L"\\*").c_str(), FindExInfoBasic, &fd, FindExSearchNameMatch, nullptr, FIND_FIRST_EX_LARGE_FETCH);
+            if (h == INVALID_HANDLE_VALUE) return;
+            do {
+                if (!wcscmp(fd.cFileName, L".") || !wcscmp(fd.cFileName, L"..") || files.size() >= 4000) continue;
+                auto full = d + L"\\" + fd.cFileName;
+                if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) { if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) walk(full); }
+                else if (full.size() < MAX_PATH) files.push_back(full);
+            } while (FindNextFileW(h, &fd));
+            FindClose(h);
+        };
+        walk(dir);
+        if (files.empty()) return L"";
+        DWORD session; WCHAR key[CCH_RM_SESSION_KEY + 1] = {};
+        if (RmStartSession(&session, 0, key) != ERROR_SUCCESS) return L"";
+        std::vector<LPCWSTR> names; for (auto& f : files) names.push_back(f.c_str());
+        std::set<std::wstring> apps;
+        if (RmRegisterResources(session, (UINT)names.size(), names.data(), 0, nullptr, 0, nullptr) == ERROR_SUCCESS) {
+            UINT need = 0, have = 0; DWORD reasons = 0;
+            if (RmGetList(session, &need, &have, nullptr, &reasons) == ERROR_MORE_DATA && need) {
+                std::vector<RM_PROCESS_INFO> info(need); have = need;
+                if (RmGetList(session, &need, &have, info.data(), &reasons) == ERROR_SUCCESS)
+                    for (UINT i = 0; i < have; i++) apps.insert(info[i].strAppName);
+            }
+        }
+        RmEndSession(session);
+        std::wstring out;
+        for (auto& a : apps) out += (out.empty() ? L"" : L", ") + a;
+        return out;
+    }
+
+    // Folders being deleted are moved aside first, under a name the profile list skips.
+    static const wchar_t* DeletedPrefix = L".deleted-";
+
+    void SweepDeleted() {
+        WIN32_FIND_DATAW fd; HANDLE h = FindFirstFileW((Paths::Root + L"\\" + DeletedPrefix + L"*").c_str(), &fd);
         if (h == INVALID_HANDLE_VALUE) return;
-        auto lid = Util::Lower(id);
-        do {
-            std::wstring base = Util::Lower(fd.cFileName); base = base.substr(0, base.size() - 4);
-            if (base == lid || (base.rfind(lid + L"-", 0) == 0 && base.size() <= lid.size() + 3)) DeleteFileW((Paths::IconDir + L"\\" + fd.cFileName).c_str());
-        } while (FindNextFileW(h, &fd));
+        std::vector<std::wstring> dirs;
+        do if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) dirs.push_back(Paths::Root + L"\\" + fd.cFileName); while (FindNextFileW(h, &fd));
         FindClose(h);
+        for (auto& d : dirs) RemoveTree(d);
+    }
+
+    static void Forget(const std::wstring& id) {
+        auto all = Settings::Load();
+        auto same = [&](const std::wstring& s) { return _wcsicmp(s.c_str(), id.c_str()) == 0; };
+        for (auto& kv : all.obj) {
+            auto& v = kv.second;
+            if ((kv.first == L"Labels" || kv.first == L"Colors") && v.type == json::Value::Object)
+                v.obj.erase(std::remove_if(v.obj.begin(), v.obj.end(), [&](const std::pair<std::wstring, json::Value>& e) { return same(e.first); }), v.obj.end());
+            if ((kv.first == L"AutoOpen" || kv.first == L"AutoNamed") && v.type == json::Value::Array)
+                v.arr.erase(std::remove_if(v.arr.begin(), v.arr.end(), [&](const json::Value& e) { return e.type == json::Value::String && same(e.s); }), v.arr.end());
+        }
+        Settings::Save(all);
     }
 
     void Delete(const Profile& p) {
@@ -819,11 +925,33 @@ namespace Core {
         // Never recurse into anything that is not a direct child of our own folder.
         if (p.id.empty() || p.id[0] == L'.' || p.id.find_first_of(L"\\/") != std::wstring::npos || !Paths::Same(Util::Parent(path), Paths::Root))
             throw Util::Format(Tr(L"Refusing to delete %s", L"Отказ удалять %s"), Util::Q(path).c_str());
-        if (RunningMap().count(Key(path))) throw Util::Format(Tr(L"Close the %s window first", L"Сначала закройте окно %s"), Util::Q(p.name).c_str());
-        if (Util::IsDir(path)) RemoveTree(path);
+
+        if (Util::IsDir(path)) {
+            // Its Claude window, then anything else still running from inside its folder.
+            if (!Paths::Demo) { Close(p.id); EndProcesses(ProcessesInside(path)); }
+            // Moved aside in one step, which fails while any file inside is open, so either
+            // the account is gone at once or nothing at all has been touched.
+            auto aside = Paths::Root + L"\\" + DeletedPrefix + p.id + Util::Format(L"-%llu", GetTickCount64());
+            bool moved = false; DWORD err = 0;
+            for (int i = 0; i < 25 && !moved; i++) {
+                moved = MoveFileExW(Long(path).c_str(), Long(aside).c_str(), 0) != 0;
+                if (!moved) { err = GetLastError(); Sleep(200); }   // antivirus and the search indexer let go quickly
+            }
+            if (!moved) {
+                auto who = WhoUses(path);
+                auto msg = who.empty()
+                    ? Util::Format(Tr(L"Windows wouldn't let go of the %s folder (code %lu). Close anything that may be using it and try again",
+                                      L"Windows не отпускает папку %s (код %lu). Закройте всё, что может её использовать, и повторите"), Util::Q(p.id).c_str(), err)
+                    : Util::Format(Tr(L"%s is still using files of this account. Close it and try again",
+                                      L"Файлы этого аккаунта ещё использует %s. Закройте его и повторите"), who.c_str());
+                Log(L"Delete " + p.id + L": " + msg);
+                throw msg;
+            }
+            if (!RemoveTree(aside)) Log(L"Delete " + p.id + L": some files were left in " + aside + L"; they go at the next start");
+        }
         RemoveShortcuts(p.name);
-        RemoveIcons(p.id);
-        SetLabel(p.id, L"");
+        RemoveProfileIcons(p.id);
+        Forget(p.id);
     }
 
     // ============================================================ colours
@@ -837,12 +965,14 @@ namespace Core {
         auto all = Settings::Load();
         auto& colors = all[L"Colors"];
         if (colors.type != json::Value::Object) colors = json::Value::MakeObject();
-        for (auto& kv : colors.obj) if (_wcsicmp(kv.first.c_str(), id.c_str()) == 0) return Palette[(int)kv.second.n % 8];
+        // Hand-edited settings may hold anything; & 7 keeps the index inside the palette.
+        auto slot = [](const json::Value& v) { return v.type == json::Value::Number ? ((int)v.n & 7) : 0; };
+        for (auto& kv : colors.obj) if (_wcsicmp(kv.first.c_str(), id.c_str()) == 0) return Palette[slot(kv.second)];
         int use[8] = {};
         std::set<std::wstring> alive;
         WIN32_FIND_DATAW fd; HANDLE h = FindFirstFileW((Paths::Root + L"\\*").c_str(), &fd);
         if (h != INVALID_HANDLE_VALUE) { do alive.insert(Util::Lower(fd.cFileName)); while (FindNextFileW(h, &fd)); FindClose(h); }
-        for (auto& kv : colors.obj) if (alive.count(Util::Lower(kv.first))) use[(int)kv.second.n % 8]++;
+        for (auto& kv : colors.obj) if (alive.count(Util::Lower(kv.first))) use[slot(kv.second)]++;
         int pick = 0; for (int i = 1; i < 8; i++) if (use[i] < use[pick]) pick = i;
         colors[id] = pick;
         Settings::Save(all);
@@ -1016,9 +1146,26 @@ namespace Core {
         json::Value cfg;
         json::Parser::Parse(Util::ReadText(dir + L"\\config.json", true), cfg);
         auto account = cfg.Str(L"lastKnownAccountUuid");
+        // Claude Code's file can be megabytes and is read for every profile on every refresh,
+        // so only the part used here is kept, and the file is parsed again only when it changes.
         static std::wstring cliPath = [] { wchar_t b[MAX_PATH]; GetEnvironmentVariableW(L"USERPROFILE", b, MAX_PATH); return std::wstring(b) + L"\\.claude.json"; }();
+        static std::mutex cliLock;
+        static ULONGLONG cliStamp = ~0ull;
+        static json::Value cliUsage;
         json::Value cli;
-        if (!Paths::Demo && !account.empty() && json::Parser::Parse(Util::ReadText(cliPath, true), cli)) {
+        if (!Paths::Demo && !account.empty()) {
+            std::lock_guard<std::mutex> hold(cliLock);
+            auto stamp = Util::FileTime(cliPath);
+            if (stamp != cliStamp) {
+                json::Value all; cliUsage = json::Value();
+                if (json::Parser::Parse(Util::ReadText(cliPath, true), all))
+                    if (auto c = all.Find(L"cachedUsageUtilization")) cliUsage = *c;
+                cliStamp = stamp;
+            }
+            cli = json::Value::MakeObject();
+            if (!cliUsage.IsNull()) cli[L"cachedUsageUtilization"] = cliUsage;
+        }
+        {
             auto c = cli.Find(L"cachedUsageUtilization");
             auto util = c ? c->Find(L"utilization") : nullptr;
             long long at = c ? (long long)c->Num(L"fetchedAtMs", 0) : 0;
@@ -1176,6 +1323,8 @@ namespace Core {
         // Looked at again only when one of those files changes.
         struct Seen { ULONGLONG stamp; std::wstring name; };
         static std::map<std::wstring, Seen> seen;
+        static std::mutex seenLock;
+        std::lock_guard<std::mutex> hold(seenLock);
         auto key = Key(dir);
         auto s = seen.find(key);
         if (s != seen.end() && s->second.stamp == stamp) return s->second.name;

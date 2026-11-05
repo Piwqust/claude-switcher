@@ -124,12 +124,14 @@ namespace Core {
     Profile Rename(const Profile& p, const std::wstring& newName);
     std::wstring AccountName(const std::wstring& profileDir);   // the name the account goes by in Claude, or L""
     bool NameFromAccount(const Profile& p);        // renames a new account after p.accountName, once
-    void Delete(const Profile& p);                 // throws std::wstring on refusal
+    void Delete(const Profile& p);                 // closes its Claude first; throws std::wstring when it can't
+    void SweepDeleted();                           // finishes deletions a locked file held up
 
     COLORREF ProfileColor(const std::wstring& id);
     std::wstring BadgeLetter(const std::wstring& label);
     std::wstring ProfileIconPath(const Profile& p);
     std::wstring AddAccountIconPath();
+    void RemoveProfileIcons(const std::wstring& id);
     void WriteAppIcon(const std::wstring& path);   // the switcher's own icon, used at build time
     void WriteIconSamples(const std::wstring& dir);
     std::wstring CreateProfileShortcut(const Profile& p, const std::wstring& dir);

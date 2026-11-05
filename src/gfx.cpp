@@ -97,8 +97,10 @@ using namespace Gfx;
 
 // ============================================================ window plumbing
 
+static void ForgetTarget(ID2D1RenderTarget* rt);
+
 Surface::~Surface() {
-    if (rt) rt->Release();
+    if (rt) { ForgetTarget(rt); rt->Release(); }
     if (editFont) DeleteObject(editFont);
     if (editBrush) DeleteObject(editBrush);
     if (hwnd) { SetWindowLongPtrW(hwnd, GWLP_USERDATA, 0); DestroyWindow(hwnd); }
@@ -172,7 +174,7 @@ void Surface::EnsureTarget() {
         auto props = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_SOFTWARE,
                      D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED), dpi, dpi);
         D2D->CreateHwndRenderTarget(props, D2D1::HwndRenderTargetProperties(hwnd, D2D1::SizeU(rc.right, rc.bottom)), &rt);
-        rt->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+        if (rt) rt->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
     } else {
         auto s = rt->GetPixelSize();
         if (s.width != (UINT32)rc.right || s.height != (UINT32)rc.bottom) rt->Resize(D2D1::SizeU(rc.right, rc.bottom));
@@ -182,6 +184,7 @@ void Surface::EnsureTarget() {
 
 void Surface::Render() {
     EnsureTarget();
+    if (!rt) return;
     LARGE_INTEGER now, freq; QueryPerformanceCounter(&now); QueryPerformanceFrequency(&freq);
     // The first frame after a quiet spell counts as one ordinary frame, so a hover that
     // starts from rest eases in instead of jumping.
@@ -194,8 +197,9 @@ void Surface::Render() {
     rt->SetTransform(D2D1::Matrix3x2F::Identity());
     rt->Clear(backdropOn ? D2D1::ColorF(0, 0, 0, 0) : (borderless ? T.menu : T.bg));
     Build();
-    if (rt->EndDraw() == D2DERR_RECREATE_TARGET) { rt->Release(); rt = nullptr; }
+    if (rt->EndDraw() == D2DERR_RECREATE_TARGET) { ForgetTarget(rt); rt->Release(); rt = nullptr; Invalidate(); }
     regions.swap(building);
+    if (!rt) return;
 
     if (animating && !timerOn) { SetTimer(hwnd, 1, 8, nullptr); timerOn = true; }
     if (!animating && timerOn) { KillTimer(hwnd, 1); timerOn = false; lastFrame.QuadPart = 0; }
@@ -347,11 +351,21 @@ float Surface::A(UINT id, float target, float ms) {
     return v.first;
 }
 
+// One brush, recoloured per call, belonging to the target that last drew. Forgotten when its
+// target goes, since a new target can be given the same address.
+static ID2D1SolidColorBrush* brush = nullptr; static ID2D1RenderTarget* brushOwner = nullptr;
+static std::unordered_map<ID2D1RenderTarget*, ID2D1Bitmap*> claudeBitmaps;
+
+static void ForgetTarget(ID2D1RenderTarget* rt) {
+    if (brushOwner == rt) { if (brush) brush->Release(); brush = nullptr; brushOwner = nullptr; }
+    auto b = claudeBitmaps.find(rt);
+    if (b != claudeBitmaps.end()) { if (b->second) b->second->Release(); claudeBitmaps.erase(b); }
+}
+
 static ID2D1SolidColorBrush* Brush(ID2D1RenderTarget* rt, D2D1_COLOR_F c) {
-    static ID2D1SolidColorBrush* b = nullptr; static ID2D1RenderTarget* owner = nullptr;
-    if (owner != rt) { if (b) b->Release(); b = nullptr; owner = rt; }
-    if (!b) rt->CreateSolidColorBrush(c, &b); else b->SetColor(c);
-    return b;
+    if (brushOwner != rt) { if (brush) brush->Release(); brush = nullptr; brushOwner = rt; }
+    if (!brush) rt->CreateSolidColorBrush(c, &brush); else brush->SetColor(c);
+    return brush;
 }
 
 void Surface::Fill(RectF r, D2D1_COLOR_F c, float radius) {
@@ -489,8 +503,7 @@ void Surface::Check(UINT id, float x, float y, bool on, D2D1_COLOR_F fill) {
 
 void Surface::Avatar(float cx, float cy, float d, const std::wstring& letters, COLORREF color, bool claude, bool running, D2D1_COLOR_F ringBg) {
     if (claude) {
-        static std::unordered_map<ID2D1RenderTarget*, ID2D1Bitmap*> cache;
-        auto& bmp = cache[rt];
+        auto& bmp = claudeBitmaps[rt];
         if (!bmp) { HICON i = ClaudeIcon(64); bmp = BitmapFromIcon(rt, i); if (i) DestroyIcon(i); }
         Image(bmp, { cx - d / 2, cy - d / 2, d, d });
     } else {

@@ -5,6 +5,7 @@
 #include <set>
 
 std::wstring Item::Status() const {
+    if (deleting) return Tr(L"Deleting…", L"Удаляется…");
     if (launching) return Tr(L"Starting…", L"Запускается…");
     if (closing) return Tr(L"Closing…", L"Закрывается…");
     if (p.pid) return Tr(L"Open", L"Открыт");
@@ -16,7 +17,7 @@ namespace App {
     HWND tray = nullptr;
     HICON smallIcon = nullptr;
 
-    enum : UINT { WM_TRAY = WM_APP + 1, WM_REFRESHED, WM_LAUNCHED, WM_ADDED, WM_SIGNAL, WM_RENAME };
+    enum : UINT { WM_TRAY = WM_APP + 1, WM_REFRESHED, WM_LAUNCHED, WM_ADDED, WM_SIGNAL, WM_RENAME, WM_DELETED };
     enum : UINT_PTR { TimerRefresh = 1, TimerSoon = 2, TimerHide = 3 };
     const int HotkeyPicker = 1, HotkeyAccount = 10;   // 11..19 for Ctrl+Alt+1..9
 
@@ -257,7 +258,9 @@ namespace App {
 
     struct LaunchResult { std::vector<std::wstring> errors; bool closing = false; };
 
-    void Launch(const std::vector<std::wstring>& ids, bool fromPicker) {
+    void Launch(const std::vector<std::wstring>& all, bool fromPicker) {
+        std::vector<std::wstring> ids;
+        for (auto& id : all) { auto it = Find(id); if (!it || !it->deleting) ids.push_back(id); }
         if (ids.empty()) return;
         for (auto& id : ids) if (auto it = Find(id)) if (!it->running()) { it->launching = true; it->launchAt = GetTickCount64(); }
         RedrawAll();
@@ -347,22 +350,30 @@ namespace App {
         } catch (const std::wstring& e) { Dialogs::Info(Owner(nullptr), Tr(L"Couldn't rename", L"Не удалось переименовать"), e); }
     }
 
+    struct DeleteResult { std::wstring id, error; };
+
     void Delete(const std::wstring& id, HWND owner) {
         auto it = Find(id);
-        if (!it || it->p.isDefault) return;
+        if (!it || it->p.isDefault || it->deleting) return;
         auto name = it->name;
-        if (!Dialogs::Ask(Owner(owner), Util::Format(Tr(L"Delete %s?", L"Удалить %s?"), Util::Q(name).c_str()),
-                Tr(L"This signs the account out on this PC. Its profile folder, saved sign-in and shortcuts are deleted; other accounts stay",
-                   L"Вы выйдете из этого аккаунта на этом компьютере. Папка профиля, сохранённый вход и ярлыки удалятся, остальные аккаунты останутся"),
-                Tr(L"Delete", L"Да, удалить"), true)) return;
-        it = Find(id);
+        std::wstring text = Tr(L"This signs the account out on this PC. Its profile folder, saved sign-in and shortcuts are deleted; other accounts stay",
+                               L"Вы выйдете из этого аккаунта на этом компьютере. Папка профиля, сохранённый вход и ярлыки удалятся, остальные аккаунты останутся");
+        if (it->running()) text = Tr(L"Its Claude window will be closed first. ", L"Сначала закроется его окно Claude. ") + text;
+        if (!Dialogs::Ask(Owner(owner), Util::Format(Tr(L"Delete %s?", L"Удалить %s?"), Util::Q(name).c_str()), text, Tr(L"Delete", L"Удалить"), true)) return;
+        it = Find(id);   // the list may have been rebuilt while the dialog was open
         if (!it) return;
-        try {
-            Core::Delete(it->p);
-            items.erase(items.begin() + (it - &items[0]));
-            SaveAutoOpen();
-            Refresh();
-        } catch (const std::wstring& e) { Dialogs::Info(Owner(owner), Tr(L"Couldn't delete", L"Не удалось удалить"), e); }
+        it->deleting = true; it->checked = false;
+        RedrawAll();
+        // A profile is thousands of files; deleting them must not freeze the windows.
+        auto p = it->p;
+        std::thread([p] {
+            auto r = new DeleteResult{ p.id };
+            try { Core::Delete(p); }
+            catch (const std::wstring& e) { r->error = e; }
+            catch (const std::exception& e) { r->error = Util::Format(L"%S", e.what()); }
+            catch (...) { r->error = Tr(L"Something went wrong", L"Что-то пошло не так"); }
+            if (!PostMessageW(tray, WM_DELETED, 0, (LPARAM)r)) delete r;
+        }).detach();
     }
 
     void CopyChats(HWND owner, const std::vector<CodeSession>& picked, const std::wstring& targetId) {
@@ -486,6 +497,21 @@ namespace App {
             Refresh();
             return 0;
         }
+        case WM_DELETED: {
+            auto r = (DeleteResult*)l;
+            if (r->error.empty()) {
+                for (size_t k = 0; k < items.size(); k++) if (items[k].p.id == r->id) { items.erase(items.begin() + k); break; }
+                WinShell::UpdateJumpList(Profiles());
+                RedrawAll();
+            } else {
+                if (auto it = Find(r->id)) it->deleting = false;
+                RedrawAll();
+                Dialogs::Info(Owner(nullptr), Tr(L"Couldn't delete", L"Не удалось удалить"), r->error);
+            }
+            delete r;
+            Refresh();
+            return 0;
+        }
         case WM_RENAME:
             if (!pendingRename.empty()) { auto id = pendingRename; pendingRename.clear(); Picker::Rename(id); }
             return 0;
@@ -537,6 +563,8 @@ namespace App {
         // Keeps the claude:// handler pointing at this exe, and takes over one left by the
         // PowerShell version; a few registry writes.
         Core::RegisterLinks();
+        // Finishes any delete a locked file held up last time; off the UI thread.
+        std::thread([] { Core::SweepDeleted(); }).detach();
         WinShell::DarkMenus(Gfx::T.dark);
 
         showEvt = CreateEventW(nullptr, FALSE, FALSE, Core::ShowEvent);
