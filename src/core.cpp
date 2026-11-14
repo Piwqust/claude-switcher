@@ -413,7 +413,13 @@ namespace Core {
         return img.rfind(dir + L"\\", 0) == 0;
     }
 
-    static std::wstring UserDataDir(const std::wstring& cmd) {
+    std::wstring Key(const std::wstring& path) {
+        auto k = Util::Lower(path);
+        while (!k.empty() && (k.back() == L'\\' || k.back() == L'/')) k.pop_back();
+        return k;
+    }
+
+    std::wstring UserDataDir(const std::wstring& cmd) {
         auto i = cmd.find(L"--user-data-dir=");
         if (i == std::wstring::npos) return L"";
         // Either --user-data-dir="C:\x y" or, as some launches pass it on, "--user-data-dir=C:\x y".
@@ -433,14 +439,13 @@ namespace Core {
         std::map<std::wstring, DWORD> map;
         if (Paths::Demo) {
             // Stand-in accounts count as open when settings.json lists them under DemoRunning.
-            for (auto& id : Settings::List(L"DemoRunning")) map[Util::Lower(ProfilePath(id))] = 1;
+            for (auto& id : Settings::List(L"DemoRunning")) map[Key(ProfilePath(id))] = 1;
             return map;
         }
         HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
         if (snap == INVALID_HANDLE_VALUE) return map;
         PROCESSENTRY32W pe{ sizeof pe };
-        auto def = Util::Lower(App.defaultData);
-        while (!def.empty() && def.back() == L'\\') def.pop_back();
+        auto def = Key(App.defaultData);
         for (BOOL ok = Process32FirstW(snap, &pe); ok; ok = Process32NextW(snap, &pe)) {
             if (_wcsicmp(pe.szExeFile, L"claude.exe") != 0) continue;
             auto image = Util::ImageOf(pe.th32ProcessID);
@@ -448,7 +453,7 @@ namespace Core {
             auto cmd = Util::CommandLineOf(pe.th32ProcessID);
             if (cmd.empty() || cmd.find(L"--type=") != std::wstring::npos) continue;
             auto dir = UserDataDir(cmd);
-            auto key = dir.empty() ? def : Util::Lower(dir);
+            auto key = dir.empty() ? def : Key(dir);
             if (!map.count(key)) map[key] = pe.th32ProcessID;
         }
         CloseHandle(snap);
@@ -493,8 +498,7 @@ namespace Core {
             p.id = id; p.isDefault = id == DefaultId; p.path = ProfilePath(id);
             auto l = labels.find(Util::Lower(id));
             p.name = l != labels.end() && !l->second.empty() ? l->second : id;
-            auto key = Util::Lower(p.path); while (!key.empty() && key.back() == L'\\') key.pop_back();
-            auto r = running.find(key); if (r != running.end()) p.pid = r->second;
+            auto r = running.find(Key(p.path)); if (r != running.end()) p.pid = r->second;
             p.lastUsed = LastUsed(p.path);
             p.usage = ReadUsage(p.path);
             out.push_back(p);
@@ -606,8 +610,7 @@ namespace Core {
         if (ctx.hit.empty() && running.size() == 1) ctx.hit = running.begin()->first;   // the only one open, hidden in the tray
         std::wstring id = DefaultId;
         for (auto& p : ProfileList(false)) {
-            auto key = Util::Lower(p.path); while (!key.empty() && key.back() == L'\\') key.pop_back();
-            if (key == ctx.hit) { id = p.id; break; }
+            if (Key(p.path) == ctx.hit) { id = p.id; break; }
         }
         AllowSetForegroundWindow(ASFW_ANY);
         Spawn(id, url);
@@ -615,10 +618,8 @@ namespace Core {
 
     bool Start(const std::wstring& id) {
         if (Paths::Demo) return false;
-        auto path = ProfilePath(id);
-        auto key = Util::Lower(path); while (!key.empty() && key.back() == L'\\') key.pop_back();
         auto running = RunningMap();
-        auto r = running.find(key);
+        auto r = running.find(Key(ProfilePath(id)));
         bool open = r != running.end();
         // A window hidden to the tray has no visible window. Launching again is still right:
         // Electron's single instance lock hands it to the running copy.
@@ -633,9 +634,8 @@ namespace Core {
     // straight to the dying copy.
     bool Close(const std::wstring& id) {
         if (Paths::Demo) return false;
-        auto key = Util::Lower(ProfilePath(id)); while (!key.empty() && key.back() == L'\\') key.pop_back();
         auto running = RunningMap();
-        auto r = running.find(key);
+        auto r = running.find(Key(ProfilePath(id)));
         if (r != running.end()) {
             std::vector<DWORD> tree{ r->second };
             HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);

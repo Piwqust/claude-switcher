@@ -324,12 +324,9 @@ namespace WinShell {
         auto image = Util::ImageOf(pid);
         if (_wcsicmp(Util::Leaf(image).c_str(), L"claude.exe") == 0) {
             auto cmd = Util::CommandLineOf(pid);
-            auto i = cmd.find(L"--user-data-dir=");
-            if (cmd.find(L"--type=") == std::wstring::npos && i != std::wstring::npos) {
-                i += 16; std::wstring dir;
-                if (cmd[i] == L'"') dir = cmd.substr(i + 1, cmd.find(L'"', i + 1) - i - 1); else dir = cmd.substr(i, cmd.find(L' ', i) - i);
-                while (!dir.empty() && dir.back() == L'\\') dir.pop_back();
-                if (Paths::Same(Util::Parent(dir), Paths::Root)) result = Util::Leaf(dir);
+            if (cmd.find(L"--type=") == std::wstring::npos) {
+                auto dir = Core::UserDataDir(cmd);
+                if (!dir.empty() && Paths::Same(Util::Parent(dir), Paths::Root)) result = Util::Leaf(dir);
             }
         }
         pidProfile[pid] = result;
