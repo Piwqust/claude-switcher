@@ -5,6 +5,25 @@ Each version's section becomes the description of its GitHub release.
 
 ## [Unreleased]
 
+Most of these fixes come from [@z6gg](https://github.com/z6gg) in [#6](https://github.com/Piwqust/claude-switcher/pull/6). Thank you!
+
+### Fixed
+
+- **Deleting an account removes all of it.** Claude unpacks files into each profile with paths longer than Windows' classic 260-character limit, which the old delete couldn't remove: it stopped half way, said nothing, and the account stayed. Profiles are now deleted with long-path support, and the folder is moved aside first, so a delete either completes or touches nothing.
+- Deleting an open account closes its Claude window and Claude Code sessions first instead of refusing. If another program still holds a file, the message names it. The delete runs in the background with a "Deleting…" status, clears the account's colour and auto-open entries and removes its icon files, which used to pile up. If it was the Claude Code default, Code gets its previous login back.
+- **Browser sign-ins work again for people who used the PowerShell version.** Windows kept sending `claude://` links to that version's handler, which no longer exists, so a sign-in finished in the browser never came back. The switcher now takes that handler over, so the choice already made in Windows Settings keeps working.
+- **The main account is found where current Claude keeps it.** Store builds since 2.42304 move its data to `%LOCALAPPDATA%\Claude-Data`; the switcher still looked in the old folder, so Main showed no usage or last-used time and chats couldn't be moved to or from it.
+- A Claude update is picked up at once, instead of the switcher starting the previous version while its folder lingers.
+- Opening an account that is already open brings its window forward instead of only flashing its taskbar button.
+- Adding an account asks about `claude://` links every time until they're set up, not just once. A failed add writes its reason to the error log.
+- Quitting while a dialog is open quits.
+- Account names Windows reserves (COM5 to COM9, LPT4 to LPT9, CONIN$, CONOUT$) are refused like the others.
+
+### Changed
+
+- The error log is appended to instead of rewritten on every line, and starts over past 256 KB.
+- `settings.json` and Claude Code's large `.claude.json` are parsed again only when they change, instead of on every lookup and refresh.
+
 ## [1.1.1] — 2026-11-14
 
 ### Fixed
