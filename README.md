@@ -28,8 +28,9 @@ Claude Desktop holds one sign-in at a time, so switching to your work account me
 - **One shortcut.** <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd> opens the picker from any app, <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>1</kbd>…<kbd>9</kbd> opens an account directly.
 - **Always at hand.** It waits in the tray, starts with Windows and can open your usual accounts on its own.
 - **Usage at a glance.** Each card shows how much of the 5-hour and 7-day limits that account has used.
+- **An account for the terminal.** Choose **Use for Claude Code** in a card's ⋯ menu: ordinary `claude` launches from any folder use that account without another login.
 - **Your main account stays as it is**, with auto update and `claude://` links.
-- **Small and native.** One 550 KB exe in C++, no .NET or Electron, English and Russian, dark and light themes.
+- **Small and native.** One C++ exe of about 650 KB, no .NET or Electron, English and Russian, dark and light themes.
 
 ## Install
 
@@ -54,7 +55,7 @@ A green dot on a card means that account is already open, and clicking it brings
 
 Claude Desktop is an Electron app, and an Electron app keeps everything in one data folder. Started with `--user-data-dir` pointing at another folder, it is a separate sign-in that runs next to the first one. The switcher keeps those folders in `%LOCALAPPDATA%\ClaudeProfiles`, starts Claude with the right one and watches which are open. Your main account starts the usual way and is never touched.
 
-It makes no network requests and never reads tokens, cookies or passwords. What is shared between accounts, where the usage figures come from and the rest: **[How it works](docs/how-it-works.md)**.
+Desktop switching does not read sign-in credentials. If you enable a default Claude Code account, the switcher reads its saved access token, verifies the account with Anthropic and sets it in Code's user settings. Details: **[How it works](docs/how-it-works.md)**.
 
 ## Compared with the original
 
@@ -62,7 +63,7 @@ This is a C++ rewrite of [Claude Code Desktop Switcher](https://github.com/Priya
 
 | | Original 2.0 | This 1.0 |
 | --- | --- | --- |
-| Runs as | a PowerShell script | one 550 KB exe |
+| Runs as | a PowerShell script | one exe, about 650 KB |
 | Window appears in | about 10 s | about 75 ms |
 | Memory | about 126 MB | about 16 MB |
 | New here | | shortcuts, tray flyout, usage, several at once, sign-in countdown, Russian, dark theme, ARM64 |

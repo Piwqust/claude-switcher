@@ -38,6 +38,14 @@ jobs:
           "ClaudeProfileSwitcher.exe (${{ matrix.arch }}): $kb KB" >> $env:GITHUB_STEP_SUMMARY
           if ($exe.Length -gt 1MB) { throw "The exe grew past 1 MB ($kb KB)." }
 
+      - name: Test Claude Code account switching
+        if: matrix.arch == 'x64'
+        shell: cmd
+        run: |
+          call build.cmd x64 build\x64\CodeAuthTests.exe test
+          if errorlevel 1 exit /b 1
+          build\x64\CodeAuthTests.exe
+
       - uses: actions/upload-artifact@v7
         with:
           name: ClaudeProfileSwitcher-${{ matrix.arch }}

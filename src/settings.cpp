@@ -49,6 +49,18 @@ namespace {
             Text(Tr(L"Settings", L"Настройки"), { Pad, y, 300, 40 }, Font(28, DWRITE_FONT_WEIGHT_SEMI_BOLD, true), T.text);
             y += 44;
 
+            y += Section(y, L"Claude Code");
+            {
+                auto it = App::Find(App::CodeProfile());
+                auto desc = App::CodeBusy() ? std::wstring(Tr(L"Checking the saved sign-in…", L"Проверяется сохранённый вход…"))
+                          : !App::CodeProblem().empty() ? App::CodeProblem()
+                          : it ? Util::Format(Tr(L"New sessions use %s from any folder. Keep the switcher running to follow Desktop's token updates", L"Новые сеансы из любой папки используют %s. Оставьте переключатель запущенным, чтобы он подхватывал обновления входа Desktop"), Util::Q(it->name).c_str())
+                               : std::wstring(Tr(L"To choose a default account for ordinary claude launches, open an account's ⋯ menu → Use for Claude Code. Your existing Code login is kept", L"Для обычной команды claude выберите аккаунт: меню ⋯ на карточке → Использовать для Claude Code. Прежний вход Code сохранится"));
+                float h = Card(y, Tr(L"Default account", L"Аккаунт по умолчанию"), desc, !App::CodeProfile().empty() ? 150.f : 0.f, 68, App::CodeProblem().empty() ? D2D1_COLOR_F{} : T.danger);
+                if (!App::CodeProfile().empty()) Button(Id("code-restore"), { w - Pad - 16 - 150, y + h / 2 - 16, 150, 32 }, Tr(L"Restore login", L"Вернуть вход"), false, [] { App::UseForCode(L""); }, false, !App::CodeBusy());
+                y += h + 4;
+            }
+
             // ---------------------------------------------------------------- startup
             y += Section(y, Tr(L"Startup", L"Запуск"));
             y += ToggleRow(y, Tr(L"Start with Windows", L"Запускать вместе с Windows"), Tr(L"The switcher starts when you sign in and waits in the tray", L"Переключатель стартует при входе в систему и ждёт в трее"),
@@ -185,7 +197,7 @@ namespace {
             y += Section(y, Tr(L"About", L"О программе"));
             {
                 auto title = L"Claude " + (Core::App.version == L"unknown" ? L"" : Core::App.version + L" ") + L"· " + (Core::App.kind == L"Msix" ? L"Microsoft Store" : Tr(L"installer", L"установщик"));
-                float h = Card(y, title, Tr(L"Switcher 1.0. Profiles live in ", L"Переключатель 1.0. Профили лежат в ") + Paths::Root, 150);
+                float h = Card(y, title, Tr(L"Switcher 1.0.4. Profiles live in ", L"Переключатель 1.0.4. Профили лежат в ") + Paths::Root, 150);
                 Button(Id("folder"), { w - Pad - 16 - 150, y + h / 2 - 16, 150, 32 }, Tr(L"Profiles folder", L"Папка профилей"), false, [] {
                     ShellExecuteW(nullptr, L"open", Paths::Root.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
                 });

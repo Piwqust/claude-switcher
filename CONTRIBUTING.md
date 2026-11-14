@@ -38,6 +38,15 @@ The build is static (`/MT`), so the exe needs nothing on the target machine. Kee
 
 Every window draws itself in `Build()`. Interactive parts register a region with `Hit()`, and hover, press and focus are animated per region id. Slow work (the process list, profile files) runs on a worker thread and hands its result back to the window with a message.
 
+`src/code_auth.*` implements the optional shared Claude Code account. Its focused tests run against throwaway settings and encrypted Desktop fixtures, without altering real logins:
+
+```bat
+build.cmd x64 build\x64\CodeAuthTests.exe test
+build\x64\CodeAuthTests.exe
+```
+
+On an interactive Windows desktop, `build\x64\CodeAuthTests.exe --menu-refresh` exercises 40 native popup menus while replacing their account lists, covering the refresh-related crash. It uses made-up accounts and cancels every menu without running an account action.
+
 ## Interface text
 
 Every string sits in the code in both languages: `Tr(L"English", L"Русский")`. Add both whenever you add one. Plurals go through `Util::Count`, quotes through `Util::Q` (“…” in English, «…» in Russian), dates through `Util::When` and `Core::Age`.

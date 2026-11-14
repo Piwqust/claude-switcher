@@ -11,6 +11,7 @@ Everything Claude Profile Switcher can do, in the order you are likely to need i
 - [Taskbar and shortcuts](#taskbar-and-shortcuts)
 - [Settings](#settings)
 - [Moving Claude Code chats](#moving-claude-code-chats)
+- [Terminal Claude Code account](#terminal-claude-code-account)
 - [Usage on the cards](#usage-on-the-cards)
 - [Command line](#command-line)
 - [Troubleshooting](#troubleshooting)
@@ -97,6 +98,7 @@ With **Ask at sign-in** off, the ticked accounts open without asking.
 Closing the window leaves the switcher in the tray, where it uses about 20 MB of memory and opens instantly.
 
 - **Left-click** the icon for the account list with usage. Open accounts have ⟳ there to restart them and ✕ to close them.
+- **Double-click** it to open the main window.
 - **Right-click** it for the standard Windows menu: accounts, Restart Claude, Close Claude, Add account…, Settings, Quit switcher.
 
 **Restart Claude** closes an open account's Claude completely and opens it again, for when it hangs or has to pick up new MCP servers or settings. Claude's own Quit only hides it to the tray, so the switcher ends the whole process, Claude Code chats running in it included; unsent text in that window is lost. With several accounts open, **All open** restarts them together.
@@ -124,6 +126,20 @@ If you would rather it quit with the window, turn off **Stay in the tray when cl
 </p>
 
 Start with Windows, asking at sign-in, which accounts open on their own, the countdown, shortcuts, hiding the picker after opening an account, the tray, separate taskbar buttons and the interface language.
+
+## Terminal Claude Code account
+
+1. On the desired account's card, choose **⋯ → Use for Claude Code**. The tray menu also offers **Claude Code default account → account**.
+2. After account verification, the card shows **Claude Code default**. Ordinary `claude` launches from any folder under this Windows user use the selected Desktop profile's existing sign-in. No separate browser login is required.
+3. Restart any already running Claude Code sessions. Settings, plugins and history remain shared.
+
+The existing Code login is kept. To return to it, open **Settings → Claude Code → Restore login**, or **⋯ → Restore previous Code login** on the selected card.
+
+Keep the switcher running in the tray to follow Desktop's token updates. If it reports an expired saved sign-in, open that profile in Desktop and select it again. The switcher does not refresh the token itself, to avoid interfering with Desktop. A revoked session still requires signing in again.
+
+This is the shared default for ordinary Windows launches. WSL, `CLAUDE_CONFIG_DIR`, `--bare`, disabled user settings and explicit keys or providers can use different credentials. Detected conflicts are reported and left unchanged.
+
+After enabling this feature, `%USERPROFILE%\.claude\settings.json` contains an access token. Do not share that file or commit it to repositories.
 
 ## Moving Claude Code chats
 
@@ -186,6 +202,6 @@ By default it follows the Windows display language: Russian when Windows is in R
 
 ## Uninstall
 
-1. In Settings, turn off **Start with Windows**, then choose **Quit switcher** in the tray.
+1. If you selected a Code account, first choose **Settings → Claude Code → Restore login** to remove the added token from shared settings. Turn off **Start with Windows**, then choose **Quit switcher** in the tray.
 2. Delete `%LOCALAPPDATA%\ClaudeProfiles\.switcher` and the `Claude Profile Switcher` and `Claude - …` shortcuts on the desktop and in the Start menu.
 3. To remove the extra accounts and their sign-ins too, delete all of `%LOCALAPPDATA%\ClaudeProfiles`. Your main Claude account is unaffected.

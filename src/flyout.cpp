@@ -129,7 +129,10 @@ namespace {
 
         void Open() {
             // Measure first so the placement knows the height, then show.
-            RECT rc; GetClientRect(hwnd, &rc);
+            InvalidateRect(hwnd, nullptr, FALSE); UpdateWindow(hwnd);
+            Place();
+            // Placing can move the window to a monitor with another scale: draw again at that
+            // scale, so the size is right before it shows, and place it by that size.
             InvalidateRect(hwnd, nullptr, FALSE); UpdateWindow(hwnd);
             Place();
             QueryPerformanceCounter(&shownAt);

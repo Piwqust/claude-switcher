@@ -12,7 +12,7 @@ struct Value {
     enum Type { Null, Bool, Number, String, Array, Object } type = Null;
     bool b = false;
     double n = 0;
-    std::wstring s;
+    std::wstring s;   // string value, or the original spelling of a parsed number
     std::vector<Value> arr;
     std::vector<std::pair<std::wstring, Value>> obj;
 
@@ -68,12 +68,14 @@ class Parser {
                 case 'b': out += L'\b'; break; case 'f': out += L'\f'; break;
                 case 'u': {
                     if (p + 4 >= end) { ok = false; return out; }
+                    for (int i = 1; i <= 4; i++) if (!((p[i] >= '0' && p[i] <= '9') || (p[i] >= 'a' && p[i] <= 'f') || (p[i] >= 'A' && p[i] <= 'F'))) { ok = false; return out; }
                     out += (wchar_t)wcstoul(std::wstring(p + 1, p + 5).c_str(), nullptr, 16); p += 4; break;
                 }
-                default: out += *p;
+                case '"': case '\\': case '/': out += *p; break;
+                default: ok = false; return out;
                 }
                 p++;
-            } else out += *p++;
+            } else { if (*p < 0x20) { ok = false; return out; } out += *p++; }
         }
         if (p < end) p++; else ok = false;
         return out;
@@ -87,13 +89,15 @@ class Parser {
             while (ok && p < end) {
                 Ws(); if (p >= end || *p != '"') { ok = false; break; }
                 auto key = ParseString(); Ws();
+                if (v.Find(key)) { ok = false; break; }
                 if (p >= end || *p != ':') { ok = false; break; }
                 p++;
                 v.obj.emplace_back(key, ParseValue(depth + 1)); Ws();
                 if (p < end && *p == ',') { p++; continue; }
-                if (p < end && *p == '}') { p++; break; }
+                if (p < end && *p == '}') { p++; return v; }
                 ok = false;
             }
+            ok = false;
             return v;
         }
         if (*p == '[') {
@@ -102,26 +106,42 @@ class Parser {
             while (ok && p < end) {
                 v.arr.push_back(ParseValue(depth + 1)); Ws();
                 if (p < end && *p == ',') { p++; continue; }
-                if (p < end && *p == ']') { p++; break; }
+                if (p < end && *p == ']') { p++; return v; }
                 ok = false;
             }
+            ok = false;
             return v;
         }
         if (*p == '"') return Value(ParseString());
         if (Lit(L"true")) return Value(true);
         if (Lit(L"false")) return Value(false);
         if (Lit(L"null")) return Value();
-        wchar_t* stop = nullptr;
-        double d = wcstod(p, &stop);
-        if (stop == p) { ok = false; return {}; }
-        p = stop; return Value(d);
+        const wchar_t* start = p;
+        if (*p == '-') p++;
+        if (p < end && *p == '0') p++;
+        else if (p < end && *p >= '1' && *p <= '9') { while (p < end && *p >= '0' && *p <= '9') p++; }
+        else { ok = false; return {}; }
+        if (p < end && *p == '.') {
+            p++; const wchar_t* digits = p;
+            while (p < end && *p >= '0' && *p <= '9') p++;
+            if (p == digits) { ok = false; return {}; }
+        }
+        if (p < end && (*p == 'e' || *p == 'E')) {
+            p++; if (p < end && (*p == '+' || *p == '-')) p++;
+            const wchar_t* digits = p;
+            while (p < end && *p >= '0' && *p <= '9') p++;
+            if (p == digits) { ok = false; return {}; }
+        }
+        std::wstring literal(start, p);
+        Value value(wcstod(literal.c_str(), nullptr)); value.s = literal;
+        return value;
     }
 public:
     static bool Parse(const std::wstring& text, Value& out) {
         Parser ps; ps.p = text.c_str(); ps.end = ps.p + text.size();
         if (ps.p < ps.end && *ps.p == 0xFEFF) ps.p++;
         out = ps.ParseValue(0);
-        return ps.ok;
+        ps.Ws(); return ps.ok && ps.p == ps.end;
     }
 };
 
@@ -145,6 +165,7 @@ inline void Write(std::wstring& out, const Value& v, int indent = 0) {
     case Value::Null: out += L"null"; break;
     case Value::Bool: out += v.b ? L"true" : L"false"; break;
     case Value::Number: {
+        if (!v.s.empty()) { out += v.s; break; }
         wchar_t b[64];
         if (v.n == (long long)v.n) swprintf_s(b, L"%lld", (long long)v.n); else swprintf_s(b, L"%.17g", v.n);
         out += b; break;

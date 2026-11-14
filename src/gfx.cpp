@@ -181,6 +181,12 @@ void Surface::EnsureTarget() {
 }
 
 void Surface::Render() {
+    // A hidden window moved to a monitor with another scale may never get WM_DPICHANGED,
+    // so the scale is read again before every frame.
+    if (!ForcedScale()) {
+        float d = (float)GetDpiForWindow(hwnd);
+        if (d && d != dpi) { dpi = d; scale = d / 96.f; if (editFont) { DeleteObject(editFont); editFont = nullptr; } }
+    }
     EnsureTarget();
     LARGE_INTEGER now, freq; QueryPerformanceCounter(&now); QueryPerformanceFrequency(&freq);
     // The first frame after a quiet spell counts as one ordinary frame, so a hover that
@@ -202,9 +208,10 @@ void Surface::Render() {
 
     if (sizeToContent && contentHeight > 0) {
         RECT rc; GetClientRect(hwnd, &rc);
-        int want = (int)std::lround(contentHeight * scale);
-        if (want != rc.bottom) {
-            RECT wr{ 0, 0, rc.right, want };
+        // The width follows the scale too: otherwise a flyout drawn at 125% stays as wide as at 100% and loses its right side.
+        int want = (int)std::lround(contentHeight * scale), wantW = (int)std::lround(width * scale);
+        if (want != rc.bottom || wantW != rc.right) {
+            RECT wr{ 0, 0, wantW, want };
             DWORD style = (DWORD)GetWindowLongW(hwnd, GWL_STYLE), ex = (DWORD)GetWindowLongW(hwnd, GWL_EXSTYLE);
             if (!borderless) AdjustWindowRectExForDpi(&wr, style, FALSE, ex, GetDpiForWindow(hwnd));
             SetWindowPos(hwnd, nullptr, 0, 0, wr.right - wr.left, wr.bottom - wr.top, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);

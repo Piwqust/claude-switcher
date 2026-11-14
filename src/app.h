@@ -40,11 +40,15 @@ namespace App {
     void AddAccount();
     void BeginRename(const std::wstring& id);
     void CommitRename(const std::wstring& id, const std::wstring& name);
-    void Delete(const std::wstring& id, HWND owner);
+    void Delete(std::wstring id, HWND owner);
     void ToggleAutoOpen(const std::wstring& id);
-    void ShowMenu(const std::wstring& id, POINT screen, HWND owner);
+    void ShowMenu(std::wstring id, POINT screen, HWND owner);
     void Notify(const std::wstring& title, const std::wstring& text, bool error = false);
     void CopyChats(HWND owner, const std::vector<CodeSession>& picked, const std::wstring& targetId);
+    void UseForCode(const std::wstring& id);   // empty restores the existing CLI login
+    std::wstring CodeProfile();
+    std::wstring CodeProblem();
+    bool CodeBusy();
 
     // settings
     bool Autostart(); void SetAutostart(bool on);

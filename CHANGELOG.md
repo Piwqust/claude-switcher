@@ -5,6 +5,19 @@ Each version's section becomes the description of its GitHub release.
 
 ## [Unreleased]
 
+## [1.0.4] — 2026-11-14
+
+### New
+
+- **Use a Desktop account as the default for Claude Code**, from its card's ⋯ menu or the tray menu. Ordinary `claude` launches use that account without another login. The original CLI login is kept and can be restored; the switcher follows Desktop's access-token updates while running without copying its refresh token.
+- Double-click the tray icon to open the main window.
+
+### Fixed
+
+- The tray flyout no longer loses its right side (the open and settings buttons, shortcut digits, close buttons) on a display scaled above 100%. Its width now follows the display's scale the way its height did.
+- Prevent a crash after selecting a card-menu command while the account list refreshes. Menus and confirmation dialogs retain their account IDs, and tray commands stay bound to the accounts originally shown.
+- Reject incomplete or ambiguous JSON before changing settings, and preserve existing numeric values exactly when rewriting them.
+
 ## [1.0.3] — 2026-10-27
 
 ### Fixed
@@ -60,7 +73,8 @@ The first release. Claude Profile Switcher is built on [Claude Code Desktop Swit
 - Start with Windows uses `HKCU\…\Run` instead of a shortcut in the Startup folder. The old shortcut is removed.
 - Messages appear as notifications and dialogs instead of a status line at the bottom of the window.
 
-[Unreleased]: https://github.com/Piwqust/claude-switcher/compare/v1.0.3...HEAD
+[Unreleased]: https://github.com/Piwqust/claude-switcher/compare/v1.0.4...HEAD
+[1.0.4]: https://github.com/Piwqust/claude-switcher/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/Piwqust/claude-switcher/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/Piwqust/claude-switcher/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/Piwqust/claude-switcher/compare/v1.0.0...v1.0.1

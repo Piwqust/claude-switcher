@@ -60,7 +60,7 @@ flowchart LR
 
 ## Where the usage figures come from
 
-The switcher never contacts Anthropic's servers and never touches tokens. The figures come from files already on your PC:
+Displaying usage does not contact Anthropic's servers or read tokens. The figures come from files already on your PC:
 
 | Source | What it holds |
 | --- | --- |
@@ -71,8 +71,10 @@ A figure is shown only if it is at most 15 minutes old and its window has not re
 
 ## Security and privacy
 
-- **No network access.** The switcher makes no network requests at all: there is no networking code, no telemetry and no update check.
-- **Sign-ins are never touched.** Tokens, cookies and passwords are not read or copied. Each account signs in by itself in its own Claude window.
+- **Desktop switching needs no network or credential access.** There is no telemetry or update check.
+- **The default Code account is optional.** **Use for Claude Code** reads the selected profile's saved access token using Windows secure storage, verifies the account over HTTPS at `api.anthropic.com/api/oauth/profile`, and writes `env.CLAUDE_CODE_OAUTH_TOKEN` in `%USERPROFILE%\.claude\settings.json`. Access to this file is restricted to your user and Windows SYSTEM. It now contains a credential: do not publish it.
+- **Desktop owns sign-in renewal.** While running, the switcher checks for a changed access token every 15 seconds. It never exports or uses the refresh token. If Desktop's cache expires, open that profile so Desktop can renew it. A revoked session still requires restoring the sign-in.
+- **The existing Code login is kept.** `.credentials.json`, account metadata and MCP logins are never rewritten. **Restore previous login** removes only the token setting the switcher added. Explicit project or organization credentials, environment variables and separate configuration directories may override the shared default.
 - **Claude is not modified.** Only standard Electron and Windows mechanisms; no patching, no proxy.
 - **No admin rights.** Everything goes into your user profile: `%LOCALAPPDATA%\ClaudeProfiles`, an `HKCU\…\Run` value for start with Windows, and its `claude://` handler registration under `HKCU\Software`.
 - **Built in the open.** Every release is built by [GitHub Actions](https://github.com/Piwqust/claude-switcher/actions) from this repository, with SHA-256 checksums next to the files.
@@ -86,7 +88,7 @@ Claude Profile Switcher started from [Claude Code Desktop Switcher](https://gith
 | | Claude Code Desktop Switcher 2.0 | Claude Profile Switcher 1.0 |
 | --- | --- | --- |
 | Written in | PowerShell and WinForms | C++, Win32, Direct2D, DirectWrite |
-| What you run | a `.ps1` script through `powershell.exe` | one 550 KB exe |
+| What you run | a `.ps1` script through `powershell.exe` | one exe, about 650 KB |
 | Window appears in | about 10 s | **about 75 ms** |
 | Memory | about 126 MB | **about 16 MB** |
 | Install | a PowerShell command with `-ExecutionPolicy Bypass` | run the exe |

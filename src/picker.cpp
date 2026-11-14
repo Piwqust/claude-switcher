@@ -181,7 +181,9 @@ namespace {
             } else
                 Text(it.name, { r.x + 8, r.y + 94, r.w - 16, 22 }, Font(14, DWRITE_FONT_WEIGHT_SEMI_BOLD), T.text, Align::Center);
             auto statusColor = it.launching || it.closing ? T.accentText : it.running() ? T.success : T.text2;
-            Text(it.Status(), { r.x + 8, r.y + 116, r.w - 16, 18 }, Font(12), statusColor, Align::Center);
+            bool code = App::CodeProfile() == it.p.id;
+            auto status = code ? std::wstring(Tr(L"Claude Code default", L"Основной для Code")) : it.Status();
+            Text(status, { r.x + 8, r.y + 116, r.w - 16, 18 }, Font(12), code ? T.accentText : statusColor, Align::Center);
 
             // Plan usage, only when current; otherwise the section is not drawn at all.
             auto& u = it.p.usage;

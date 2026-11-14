@@ -1,5 +1,6 @@
 #include "app.h"
 #include "shell.h"
+#include "code_auth.h"
 #include <shellapi.h>
 #include <thread>
 #include <set>
@@ -16,8 +17,8 @@ namespace App {
     HWND tray = nullptr;
     HICON smallIcon = nullptr;
 
-    enum : UINT { WM_TRAY = WM_APP + 1, WM_REFRESHED, WM_LAUNCHED, WM_ADDED, WM_SIGNAL, WM_RENAME };
-    enum : UINT_PTR { TimerRefresh = 1, TimerSoon = 2, TimerHide = 3 };
+    enum : UINT { WM_TRAY = WM_APP + 1, WM_REFRESHED, WM_LAUNCHED, WM_ADDED, WM_SIGNAL, WM_RENAME, WM_CODE_AUTH };
+    enum : UINT_PTR { TimerRefresh = 1, TimerSoon = 2, TimerHide = 3, TimerCode = 4 };
     const int HotkeyPicker = 1, HotkeyAccount = 10;   // 11..19 for Ctrl+Alt+1..9
 
     static UINT taskbarCreated;
@@ -25,6 +26,38 @@ namespace App {
     static std::vector<int> accountTaken;
     static std::wstring pendingRename;
     static HANDLE showEvt, exitEvt, addEvt;
+    static bool codeBusy = false;
+    static std::wstring codeProfile, codeProblem;
+    static void RedrawAll();
+
+    std::wstring CodeProfile() { return codeProfile; }
+    std::wstring CodeProblem() { return codeProblem; }
+    bool CodeBusy() { return codeBusy; }
+    struct CodeResult { std::wstring profile, error; bool requested = false; };
+
+    static void UpdateCode(const std::wstring& id, bool requested) {
+        if (codeBusy) return;
+        Profile profile;
+        if (requested && !id.empty()) {
+            auto it = Find(id); if (!it) return;
+            profile = it->p;
+        }
+        codeBusy = true;
+        std::thread([profile, requested] {
+            auto r = new CodeResult(); r->requested = requested;
+            try {
+                if (!requested) CodeAuth::Sync();
+                else if (profile.id.empty()) CodeAuth::Restore();
+                else CodeAuth::Use(profile);
+            } catch (const std::wstring& error) { r->error = error; }
+              catch (...) { r->error = Tr(L"Couldn't change the Claude Code account", L"Не удалось сменить аккаунт Claude Code"); }
+            try { r->profile = CodeAuth::Selected(); } catch (...) {}
+            if (!PostMessageW(tray, WM_CODE_AUTH, 0, (LPARAM)r)) delete r;
+        }).detach();
+        RedrawAll();
+    }
+
+    void UseForCode(const std::wstring& id) { UpdateCode(id, true); }
 
     Item* Find(const std::wstring& id) { for (auto& i : items) if (_wcsicmp(i.p.id.c_str(), id.c_str()) == 0) return &i; return nullptr; }
 
@@ -130,21 +163,24 @@ namespace App {
 
     // The tray's right-click menu: native, so it looks and behaves like every other one.
     static void TrayMenu() {
+        // Native menus keep dispatching refresh messages. Bind every command to
+        // the account shown when the menu opened, rather than a live list index.
+        const auto menuItems = items;
         WinShell::DarkMenus(Gfx::T.dark);
         HMENU m = CreatePopupMenu();
         int n = 0;
-        for (auto& i : items) {
+        for (auto& i : menuItems) {
             auto label = i.name + (i.index <= 9 ? Util::Format(L"\tCtrl+Alt+%d", i.index) : L"");
             AppendMenuW(m, MF_STRING | (i.running() ? MF_CHECKED : 0), 100 + n++, label.c_str());
         }
         // Restart and Close: one entry per open account, and all of them at once when there are several.
         std::vector<std::wstring> open;
-        for (auto& i : items) if (i.running()) open.push_back(i.p.id);
+        for (auto& i : menuItems) if (i.running()) open.push_back(i.p.id);
         AppendMenuW(m, MF_SEPARATOR, 0, nullptr);
         auto perAccount = [&](UINT base, UINT all, const wchar_t* label) {
             if (open.empty()) { AppendMenuW(m, MF_STRING | MF_GRAYED, 0, label); return; }
             HMENU sub = CreatePopupMenu();
-            for (size_t k = 0; k < items.size(); k++) if (items[k].running()) AppendMenuW(sub, MF_STRING, base + k, items[k].name.c_str());
+            for (size_t k = 0; k < menuItems.size(); k++) if (menuItems[k].running()) AppendMenuW(sub, MF_STRING, base + k, menuItems[k].name.c_str());
             if (open.size() > 1) {
                 AppendMenuW(sub, MF_SEPARATOR, 0, nullptr);
                 AppendMenuW(sub, MF_STRING, all, Tr(L"All open", L"Все открытые"));
@@ -153,6 +189,14 @@ namespace App {
         };
         perAccount(200, 5, Tr(L"Restart Claude", L"Перезапустить Claude"));
         perAccount(300, 6, Tr(L"Close Claude", L"Закрыть Claude"));
+        HMENU code = CreatePopupMenu();
+        for (size_t k = 0; k < menuItems.size(); k++)
+            AppendMenuW(code, MF_STRING | (codeBusy ? MF_GRAYED : 0) | (menuItems[k].p.id == codeProfile ? MF_CHECKED : 0), 400 + k, menuItems[k].name.c_str());
+        if (!codeProfile.empty()) {
+            AppendMenuW(code, MF_SEPARATOR, 0, nullptr);
+            AppendMenuW(code, MF_STRING | (codeBusy ? MF_GRAYED : 0), 7, Tr(L"Restore previous login", L"Вернуть прежний вход"));
+        }
+        AppendMenuW(m, MF_POPUP, (UINT_PTR)code, Tr(L"Claude Code default account", L"Аккаунт Claude Code по умолчанию"));
         AppendMenuW(m, MF_SEPARATOR, 0, nullptr);
         AppendMenuW(m, MF_STRING, 1, Tr(L"Show accounts", L"Открыть окно выбора"));
         AppendMenuW(m, MF_STRING, 2, Tr(L"Add account…", L"Добавить аккаунт…"));
@@ -165,11 +209,13 @@ namespace App {
         int cmd = TrackPopupMenuEx(m, TPM_RETURNCMD | TPM_RIGHTBUTTON | TPM_BOTTOMALIGN, pt.x, pt.y, tray, nullptr);
         PostMessageW(tray, WM_NULL, 0, 0);
         DestroyMenu(m);
-        if (cmd >= 100 && cmd - 100 < (int)items.size()) Launch({ items[cmd - 100].p.id }, false);
-        else if (cmd >= 200 && cmd - 200 < (int)items.size()) Restart({ items[cmd - 200].p.id });
-        else if (cmd >= 300 && cmd - 300 < (int)items.size()) Close({ items[cmd - 300].p.id });
+        if (cmd >= 100 && cmd - 100 < (int)menuItems.size()) { auto id = menuItems[cmd - 100].p.id; if (Find(id)) Launch({ id }, false); }
+        else if (cmd >= 200 && cmd - 200 < (int)menuItems.size()) { auto id = menuItems[cmd - 200].p.id; if (Find(id)) Restart({ id }); }
+        else if (cmd >= 300 && cmd - 300 < (int)menuItems.size()) { auto id = menuItems[cmd - 300].p.id; if (Find(id)) Close({ id }); }
+        else if (cmd >= 400 && cmd - 400 < (int)menuItems.size()) UseForCode(menuItems[cmd - 400].p.id);
         else if (cmd == 5) Restart(open);
         else if (cmd == 6) Close(open);
+        else if (cmd == 7) UseForCode(L"");
         else if (cmd == 1) ShowPicker();
         else if (cmd == 2) AddAccount();
         else if (cmd == 3) ShowSettings();
@@ -330,14 +376,17 @@ namespace App {
         if (name.empty() || name == it->name) return;
         if (it->p.isDefault && (name == L"Main" || name == L"Основной")) name = Core::DefaultId;   // back to its own name
         try {
-            auto renamed = Core::Rename(it->p, name);
+            auto profile = it->p;
+            auto renamed = Core::Rename(profile, name);
+            it = Find(renamed.id);
+            if (!it) { Refresh(); return; }
             it->p = renamed; it->name = Core::DisplayName(renamed); it->letters = Core::BadgeLetter(it->name);
             WinShell::UpdateJumpList(Profiles());
             RedrawAll();
         } catch (const std::wstring& e) { Dialogs::Info(Owner(nullptr), Tr(L"Couldn't rename", L"Не удалось переименовать"), e); }
     }
 
-    void Delete(const std::wstring& id, HWND owner) {
+    void Delete(std::wstring id, HWND owner) {
         auto it = Find(id);
         if (!it || it->p.isDefault) return;
         auto name = it->name;
@@ -348,8 +397,10 @@ namespace App {
         it = Find(id);
         if (!it) return;
         try {
-            Core::Delete(it->p);
-            items.erase(items.begin() + (it - &items[0]));
+            auto profile = it->p;
+            Core::Delete(profile);
+            it = Find(id);
+            if (it) items.erase(items.begin() + (it - items.data()));
             SaveAutoOpen();
             Refresh();
         } catch (const std::wstring& e) { Dialogs::Info(Owner(owner), Tr(L"Couldn't delete", L"Не удалось удалить"), e); }
@@ -380,7 +431,9 @@ namespace App {
 
     // The ⋯ menu of an account card. Native, so it has the system's look, animation and
     // keyboard behaviour; uxtheme's dark mode makes it follow the theme.
-    void ShowMenu(const std::wstring& id, POINT at, HWND owner) {
+    void ShowMenu(std::wstring id, POINT at, HWND owner) {
+        // The caller often passes Item::p.id. Own it across the menu's nested
+        // message loop: a refresh replaces and frees the entire item vector.
         auto it = Find(id);
         if (!it) return;
         WinShell::DarkMenus(Gfx::T.dark);
@@ -391,6 +444,9 @@ namespace App {
         AppendMenuW(m, MF_STRING | (it->running() ? 0 : MF_GRAYED), 8, Tr(L"Restart\tCtrl+R", L"Перезапустить\tCtrl+R"));
         AppendMenuW(m, MF_STRING | (it->running() ? 0 : MF_GRAYED), 9, Tr(L"Close Claude", L"Закрыть Claude"));
         AppendMenuW(m, MF_STRING | (it->autoOpen ? MF_CHECKED : 0), 2, Tr(L"Open when Windows starts", L"Открывать при входе в Windows"));
+        AppendMenuW(m, MF_SEPARATOR, 0, nullptr);
+        AppendMenuW(m, MF_STRING | (codeBusy ? MF_GRAYED : 0) | (id == codeProfile ? MF_CHECKED : 0), 10, Tr(L"Use for Claude Code", L"Использовать для Claude Code"));
+        if (id == codeProfile) AppendMenuW(m, MF_STRING | (codeBusy ? MF_GRAYED : 0), 11, Tr(L"Restore previous Code login", L"Вернуть прежний вход Code"));
         AppendMenuW(m, MF_SEPARATOR, 0, nullptr);
         AppendMenuW(m, MF_STRING, 3, Tr(L"Rename\tF2", L"Переименовать\tF2"));
         AppendMenuW(m, MF_STRING, 4, Tr(L"Desktop shortcut", L"Ярлык на рабочий стол"));
@@ -407,10 +463,12 @@ namespace App {
         case 1: Launch({ id }, true); break;
         case 2: ToggleAutoOpen(id); break;
         case 3: BeginRename(id); break;
-        case 4:
-            Core::CreateProfileShortcut(it->p, Paths::Desktop());
-            Notify(Tr(L"Shortcut created", L"Ярлык готов"), Util::Format(Tr(L"%s is on the desktop", L"%s на рабочем столе"), Util::Q(L"Claude - " + it->p.name).c_str()));
+        case 4: {
+            auto profile = it->p;
+            Core::CreateProfileShortcut(profile, Paths::Desktop());
+            Notify(Tr(L"Shortcut created", L"Ярлык готов"), Util::Format(Tr(L"%s is on the desktop", L"%s на рабочем столе"), Util::Q(L"Claude - " + profile.name).c_str()));
             break;
+        }
         case 5: Dialogs::Transfer(owner, id); break;
         case 6:
             if (Util::IsDir(it->p.path)) ShellExecuteW(nullptr, L"open", it->p.path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
@@ -419,10 +477,14 @@ namespace App {
         case 7: Delete(id, owner); break;
         case 8: Restart({ id }); break;
         case 9: Close({ id }); break;
+        case 10: UseForCode(id); break;
+        case 11: UseForCode(L""); break;
         }
     }
 
     // ------------------------------------------------------------ messages
+
+    static ULONGLONG trayDoubleAt = 0;
 
     static LRESULT CALLBACK TrayProc(HWND h, UINT m, WPARAM w, LPARAM l) {
         switch (m) {
@@ -430,7 +492,12 @@ namespace App {
             switch (LOWORD(l)) {
             // Version 4 also sends the raw button messages; reacting to those as well would
             // open and immediately close the flyout.
-            case NIN_SELECT: case NIN_KEYSELECT: Flyout::Toggle(); return 0;
+            case NIN_SELECT: case NIN_KEYSELECT:
+                // The shell can follow a double click with one more select; it must not reopen the flyout.
+                if (GetTickCount64() - trayDoubleAt < GetDoubleClickTime()) return 0;
+                Flyout::Toggle(); return 0;
+            // The first click of the two has opened the flyout already; the double click swaps it for the window.
+            case WM_LBUTTONDBLCLK: trayDoubleAt = GetTickCount64(); Flyout::Hide(); ShowPicker(); return 0;
             case WM_CONTEXTMENU: TrayMenu(); return 0;
             }
             return 0;
@@ -477,6 +544,22 @@ namespace App {
             Refresh();
             return 0;
         }
+        case WM_CODE_AUTH: {
+            auto r = (CodeResult*)l;
+            codeBusy = false;
+            bool changed = codeProblem != r->error;
+            codeProfile = r->profile; codeProblem = r->error;
+            if (!r->error.empty() && (r->requested || changed)) {
+                if (r->requested) Dialogs::Info(Owner(nullptr), Tr(L"Claude Code", L"Claude Code"), r->error);
+                else Notify(L"Claude Code", r->error, true);
+            } else if (r->requested && r->error.empty()) {
+                auto it = Find(codeProfile);
+                auto text = it ? Util::Format(Tr(L"New Claude Code sessions use %s. Restart any running Code session to apply", L"Новые сеансы Claude Code используют %s. Уже работающий Code нужно перезапустить"), Util::Q(it->name).c_str())
+                               : std::wstring(Tr(L"The previous Claude Code login is active again", L"Прежний вход Claude Code снова активен"));
+                Notify(L"Claude Code", text);
+            }
+            delete r; RedrawAll(); return 0;
+        }
         case WM_RENAME:
             if (!pendingRename.empty()) { auto id = pendingRename; pendingRename.clear(); Picker::Rename(id); }
             return 0;
@@ -495,6 +578,8 @@ namespace App {
                 bool pending = false; for (auto& i : items) pending |= i.launching || i.closing;
                 Refresh();
                 if (pending) SetTimer(h, TimerSoon, 3000, nullptr);
+            } else if (w == TimerCode) {
+                UpdateCode(L"", false);
             } else if (w == TimerHide) {
                 KillTimer(h, TimerHide);
                 if (Picker::Visible()) ClosePicker();
@@ -536,6 +621,9 @@ namespace App {
         // Names come up at once; running state and limits follow a moment later.
         Merge(Core::ProfileList(true), true);
         SetTimer(tray, TimerRefresh, 2000, nullptr);
+        try { codeProfile = CodeAuth::Selected(); } catch (const std::wstring& e) { codeProblem = e; }
+        SetTimer(tray, TimerCode, 15000, nullptr);
+        UpdateCode(L"", false);
 
         if (mode == StartMode::Window) ShowPicker();
         else if (mode == StartMode::Startup) {

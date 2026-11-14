@@ -12,10 +12,13 @@ Describe what the vulnerability allows, how to reproduce it and which version yo
 
 ## What the program does and does not do
 
-- It makes no network requests.
-- It does not read or copy tokens, cookies or passwords.
-- It does not modify Claude's files.
-- It runs with your user's rights and writes only to `%LOCALAPPDATA%\ClaudeProfiles`, to shortcuts on the desktop and in the Start menu, and to the `Claude Profile Switcher` value under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.
+- Desktop-only switching makes no network requests and does not read sign-in credentials.
+- The optional **Use for Claude Code** action decrypts the selected Desktop profile's access token with the current Windows user's secure storage. It sends that token only over HTTPS to `api.anthropic.com/api/oauth/profile`, with redirects disabled, to verify the account. No model requests are made by the switcher.
+- The access token is stored in `env.CLAUDE_CODE_OAUTH_TOKEN` in `%USERPROFILE%\.claude\settings.json`, as required for ordinary Claude Code launches. The file and temporary replacements are restricted to the current user and Windows SYSTEM. Treat this settings file as a credential file; do not share it or commit it. No refresh token is exported or refreshed by the switcher; Desktop remains its owner.
+- While running, the switcher checks the selected profile every 15 seconds and copies a changed, verified access token. It does not replace explicit credentials configured elsewhere. Project settings, managed settings, custom configuration directories, bare mode and explicit environment overrides may select their own credentials.
+- **Restore previous login** removes only the switcher's token setting. The existing `.credentials.json`, account metadata, MCP logins and other settings are never rewritten. `%LOCALAPPDATA%\ClaudeProfiles\.switcher\code-auth.json` records the selection and token fingerprints for crash recovery, without raw tokens.
+- It does not modify Claude Desktop's installation or profile files.
+- It runs with your user's rights and writes to `%LOCALAPPDATA%\ClaudeProfiles`, to the optional Claude Code user settings described above, to shortcuts on the desktop and in the Start menu, and to the `Claude Profile Switcher` value under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.
 - It reads the command lines of `claude.exe` processes to tell which accounts are open.
 
 ## Verifying a download
