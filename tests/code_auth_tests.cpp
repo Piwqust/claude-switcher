@@ -186,6 +186,60 @@ static void Tests() {
     Refuses([&] { CodeAuth::CheckOverrides(cfg); }, "refuse apiKeyHelper override");
     Paths::Demo = true;
 }
+// Profiles hold paths past 260 characters, read-only files and links; a delete removes all of
+// that, follows no link out of the folder, and leaves everything in place while a file is open.
+static std::wstring Long(const std::wstring& p) { return L"\\\\?\\" + p; }
+static std::wstring DeepTree(const std::wstring& dir) {
+    auto d = dir;
+    Check(CreateDirectoryW(Long(d).c_str(), nullptr) != 0, "create profile folder");
+    for (int i = 0; i < 8; i++) { d += L"\\" + std::wstring(40, L'a' + i); Check(CreateDirectoryW(Long(d).c_str(), nullptr) != 0, "create deep folder"); }
+    auto file = d + L"\\skill.md";
+    Check(file.size() > 300, "fixture path is past the classic limit");
+    HANDLE h = CreateFileW(Long(file).c_str(), GENERIC_WRITE, 0, nullptr, CREATE_NEW, FILE_ATTRIBUTE_READONLY, nullptr);
+    Check(h != INVALID_HANDLE_VALUE, "create long-path read-only file"); CloseHandle(h);
+    return file;
+}
+static void DeleteTests() {
+    Paths::IconDir = Paths::Home + L"\\icons";
+    auto outside = Paths::Root + L"\\..\\" + fs::path(Paths::Root).filename().wstring() + L"-outside";
+    fs::create_directories(outside);
+    Util::WriteText(outside + L"\\keep.txt", L"keep", false);
+
+    Profile p; p.id = L"CPS delete test"; p.name = L"CPS delete test"; p.path = Paths::Root + L"\\" + p.id;
+    DeepTree(p.path);
+    auto link = p.path + L"\\linked";
+    Check(_wsystem((L"mklink /J \"" + link + L"\" \"" + outside + L"\" >nul").c_str()) == 0, "create junction out of the profile");
+    auto all = json::Value::MakeObject();
+    all[L"Labels"][p.id] = L"Renamed"; all[L"Labels"][L"Other"] = L"Kept";
+    all[L"Colors"][p.id] = 3; all[L"Colors"][L"Other"] = 4;
+    auto open = json::Value::MakeArray(); open.arr.emplace_back(p.id); open.arr.emplace_back(L"Other"); all[L"AutoOpen"] = open;
+    Settings::Save(all);
+
+    Core::Delete(p);
+    Check(!fs::exists(p.path), "delete removes a profile with long paths");
+    Check(Util::Exists(outside + L"\\keep.txt"), "delete does not follow a junction out of the profile");
+    auto after = Settings::Load();
+    Check(!after.Find(L"Labels")->Find(p.id) && after.Find(L"Labels")->Find(L"Other"), "delete forgets the label only");
+    Check(!after.Find(L"Colors")->Find(p.id) && after.Find(L"Colors")->Find(L"Other"), "delete forgets the colour only");
+    auto ids = Settings::List(L"AutoOpen");
+    Check(ids.size() == 1 && ids[0] == L"Other", "delete forgets auto-open only");
+
+    Profile q; q.id = L"CPS locked test"; q.name = q.id; q.path = Paths::Root + L"\\" + q.id;
+    auto held = DeepTree(q.path);
+    HANDLE h = CreateFileW(Long(held).c_str(), GENERIC_READ, 0, nullptr, OPEN_EXISTING, 0, nullptr);
+    Check(h != INVALID_HANDLE_VALUE, "hold a file of the profile open");
+    Refuses([&] { Core::Delete(q); }, "delete refuses while a file is open");
+    CloseHandle(h);
+    Check(Util::Exists(Long(held)), "a refused delete touches nothing");
+    Core::Delete(q);
+    Check(!fs::exists(q.path), "delete succeeds once the file is closed");
+
+    auto left = Paths::Root + L"\\.deleted-CPS sweep test-1";
+    DeepTree(left);
+    Core::SweepDeleted();
+    Check(GetFileAttributesW(Long(left).c_str()) == INVALID_FILE_ATTRIBUTES, "start-up sweep finishes a delete");
+    fs::remove_all(outside);
+}
 int wmain(int argc, wchar_t** argv) {
     CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     if (argc == 2 && std::wstring(argv[1]) == L"--menu-refresh") {
@@ -210,9 +264,9 @@ int wmain(int argc, wchar_t** argv) {
     int result = 0;
     try {
         Check(!fs::exists(root) && fs::create_directory(root), "create isolated test directory");
-        Paths::Root = root.wstring(); Paths::Home = Paths::Root + L"\\.switcher"; Paths::SettingsFile = Paths::Root + L"\\settings.json"; Paths::Demo = true;
+        Paths::Root = root.wstring(); Paths::Home = Paths::Root + L"\\.switcher"; Paths::SettingsFile = Paths::Root + L"\\settings.json"; Paths::Log = Paths::Root + L"\\error.log"; Paths::Demo = true;
         Core::App.defaultData = Paths::Root + L"\\.default";
-        Tests(); std::cout << checks << " checks passed\n";
+        Tests(); DeleteTests(); std::cout << checks << " checks passed\n";
     } catch (const std::exception& e) { std::cerr << e.what() << '\n'; result = 1; }
       catch (const std::wstring& e) { std::wcerr << e << L'\n'; result = 1; }
     if (root.parent_path() == fs::weakly_canonical(temp) && root.filename().wstring().find(L"cps-code-tests-") == 0) fs::remove_all(root);
