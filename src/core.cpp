@@ -305,12 +305,42 @@ namespace Core {
         return best;
     }
 
-    // Older Store builds were redirected into the package container; current ones write
-    // to the real %APPDATA%\Claude. Whichever exists is where Default lives.
-    static std::wstring MsixData(const std::wstring& family) {
-        auto packaged = Env(L"LOCALAPPDATA") + L"\\Packages\\" + family + L"\\LocalCache\\Roaming\\Claude";
-        if (Util::IsDir(packaged)) return packaged;
-        return Util::IsDir(ClassicData()) ? ClassicData() : packaged;
+    static ULONGLONG LastUsed(const std::wstring& dir);
+
+    /*
+        Where the main account's data lives has moved over the years:
+          %LOCALAPPDATA%\Claude-Data\<package family, lower case>   Store builds since 2.42304, moved there by Claude
+          %LOCALAPPDATA%\Claude-Data                                 when %APPDATA% is on a network share
+          %LOCALAPPDATA%\Packages\<family>\LocalCache\Roaming\Claude  earlier Store builds
+          %APPDATA%\Claude                                           installer builds
+        Claude leaves the old folders behind, so the one it wrote to last is the live one.
+    */
+    static std::wstring DefaultData(const std::wstring& family) {
+        std::vector<std::wstring> candidates;
+        auto local = Env(L"LOCALAPPDATA");
+        auto moved = local + L"\\Claude-Data";
+        if (!family.empty()) candidates.push_back(moved + L"\\" + Util::Lower(family));
+        WIN32_FIND_DATAW fd; HANDLE h = FindFirstFileW((moved + L"\\*").c_str(), &fd);
+        if (h != INVALID_HANDLE_VALUE) {
+            do if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && fd.cFileName[0] != L'.') candidates.push_back(moved + L"\\" + fd.cFileName);
+            while (FindNextFileW(h, &fd));
+            FindClose(h);
+        }
+        candidates.push_back(moved);
+        if (!family.empty()) candidates.push_back(local + L"\\Packages\\" + family + L"\\LocalCache\\Roaming\\Claude");
+        candidates.push_back(ClassicData());
+        std::wstring best; ULONGLONG bestTime = 0;
+        for (auto& c : candidates) {
+            auto t = LastUsed(c);
+            if (t > bestTime) { best = c; bestTime = t; }
+        }
+        if (!best.empty()) return best;
+        // Never opened yet: where this kind of install starts out.
+        if (!family.empty()) {
+            auto packaged = local + L"\\Packages\\" + family + L"\\LocalCache\\Roaming\\Claude";
+            if (Util::IsDir(packaged)) return packaged;
+        }
+        return ClassicData();
     }
 
     static bool FindMsix(ClaudeInstall& out) {
@@ -340,7 +370,7 @@ namespace Core {
             if (!Util::Exists(exe)) exe = FindExe(root, 2);
             if (exe.empty() || (found && ver <= bestVer)) continue;
             auto family = parts[0] + L"_" + parts.back();
-            out = { L"Msix", exe, parts[1], family + L"!Claude", MsixData(family) };
+            out = { L"Msix", exe, parts[1], family + L"!Claude", L"" };
             found = true; bestVer = ver;
         }
         RegCloseKey(k);
@@ -369,30 +399,39 @@ namespace Core {
         for (auto& d : dirs) {
             if (!Util::IsDir(d)) continue;
             auto exe = FindExe(d, 2);
-            if (!exe.empty()) { out = { L"Classic", exe, L"unknown", L"", ClassicData() }; return true; }
+            if (!exe.empty()) { out = { L"Classic", exe, L"unknown", L"", L"" }; return true; }
         }
         return false;
     }
 
-    static void Detect(bool allowCache);
-    void Init(bool allowCache) {
-        Detect(allowCache);
-        if (Paths::Demo) App.defaultData = Paths::Root + L"\\.default";
-    }
-
-    static void Detect(bool allowCache) {
+    // Fills App; true when it was looked up just now rather than taken from the cache.
+    static bool Detect(bool allowCache) {
+        App = {};
         auto saved = Settings::Str(L"ClaudePath");
-        if (!saved.empty() && Util::Exists(saved)) { App = { L"Classic", saved, L"unknown", L"", ClassicData() }; return; }
+        if (!saved.empty() && Util::Exists(saved)) { App = { L"Classic", saved, L"unknown", L"", L"" }; return true; }
+        // The Store lookup is one registry key and always runs, so a Claude update is picked
+        // up at once instead of starting the previous version while its folder lingers.
+        if (FindMsix(App)) return true;
         if (allowCache) {
-            // Shortcut clicks pay for discovery every time, so they may use the last result
-            // as long as that versioned path still exists.
+            // The installer lookup walks every uninstall entry, so shortcut clicks reuse the
+            // last result while that path still exists.
             auto all = Settings::Load(); auto c = all.Find(L"InstallCache");
-            if (c && Util::Exists(c->Str(L"Exe"))) {
-                App = { c->Str(L"Kind", L"Classic"), c->Str(L"Exe"), c->Str(L"Version", L"unknown"), c->Str(L"AppUserModelId"), c->Str(L"DefaultProfilePath", ClassicData()) };
-                return;
+            if (c && c->Str(L"Kind") == L"Classic" && Util::Exists(c->Str(L"Exe"))) {
+                App = { L"Classic", c->Str(L"Exe"), c->Str(L"Version", L"unknown"), L"", L"" };
+                return false;
             }
         }
-        if (!FindMsix(App) && !FindClassic(App)) throw NotFound();
+        return FindClassic(App);
+    }
+
+    void Init(bool allowCache) {
+        bool fresh = Detect(allowCache);
+        if (App.exe.empty()) throw NotFound();
+        auto family = App.kind == L"Msix" ? App.aumid.substr(0, App.aumid.find(L'!')) : L"";
+        App.defaultData = Paths::Demo ? Paths::Root + L"\\.default" : DefaultData(family);
+        if (!fresh || Paths::Demo) return;
+        auto all = Settings::Load(); auto old = all.Find(L"InstallCache");
+        if (old && old->Str(L"Exe") == App.exe && old->Str(L"DefaultProfilePath") == App.defaultData) return;
         auto c = json::Value::MakeObject();
         c[L"Kind"] = App.kind; c[L"Exe"] = App.exe; c[L"Version"] = App.version;
         c[L"AppUserModelId"] = App.aumid; c[L"DefaultProfilePath"] = App.defaultData;
