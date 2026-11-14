@@ -596,12 +596,25 @@ namespace Core {
         return p;
     }
 
+    // Brings an open window forward. Windows lets only the foreground process hand focus on;
+    // a click in the picker or a shortcut makes us that process, but by the time a worker
+    // thread gets here the lock may be back. A synthetic Alt press counts as input again;
+    // without it the window only flashed on the taskbar.
     static bool ShowWindowOf(DWORD pid) {
         auto wins = Util::AppWindowsOf(pid);
         if (wins.empty()) return false;
         HWND h = wins[0];
+        AllowSetForegroundWindow(pid);
         if (IsIconic(h)) ShowWindow(h, SW_RESTORE);
-        SetForegroundWindow(h);
+        if (!SetForegroundWindow(h) || GetForegroundWindow() != h) {
+            INPUT alt[2] = {};
+            alt[0].type = alt[1].type = INPUT_KEYBOARD;
+            alt[0].ki.wVk = alt[1].ki.wVk = VK_MENU;
+            alt[1].ki.dwFlags = KEYEVENTF_KEYUP;
+            SendInput(2, alt, sizeof(INPUT));
+            SetForegroundWindow(h);
+        }
+        BringWindowToTop(h);
         return true;
     }
 
@@ -676,6 +689,8 @@ namespace Core {
         // A window hidden to the tray has no visible window. Launching again is still right:
         // Electron's single instance lock hands it to the running copy.
         if (open && ShowWindowOf(r->second)) return true;
+        // Lets the new Claude, or the running copy it hands over to, take the foreground.
+        AllowSetForegroundWindow(ASFW_ANY);
         Spawn(id, L"");
         return open;
     }
