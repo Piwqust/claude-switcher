@@ -545,8 +545,13 @@ namespace Core {
         std::wstring name;
         for (int n = 2;; n++) { name = Util::Format(L"Account %d", n); if (ValidateName(name).empty()) break; }
         CreateDirectoryW(Paths::Root.c_str(), nullptr);
-        CreateDirectoryW((Paths::Root + L"\\" + name).c_str(), nullptr);
-        Profile p; Resolve(name, p);
+        if (!CreateDirectoryW((Paths::Root + L"\\" + name).c_str(), nullptr)) {
+            DWORD err = GetLastError();
+            if (err != ERROR_ALREADY_EXISTS)
+                throw Util::Format(Tr(L"Couldn't create the profile folder %s (code %lu)", L"Не удалось создать папку профиля %s (код %lu)"), Util::Q(name).c_str(), err);
+        }
+        Profile p;
+        if (!Resolve(name, p)) throw Util::Format(Tr(L"The new account %s didn't appear", L"Новый аккаунт %s не появился"), Util::Q(name).c_str());
         // Straight to the sign-in screen: there is nothing else to do with an empty profile.
         Start(p.id);
         return p;

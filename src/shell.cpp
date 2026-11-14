@@ -79,19 +79,41 @@ using namespace Gfx;
     // in the browser came back to the main account. Windows lets only the person change that,
     // so the switcher just offers itself as a handler; Claude's own key is left alone.
     static const wchar_t* LinkProgId = L"ClaudeProfileSwitcher.Link";
+    // What the PowerShell version registered. Whoever picked it in Windows Settings still has
+    // every claude:// link sent there, to a script that is gone, so each sign-in finished in
+    // the browser was lost. Windows signs that choice, so it can't be moved to the new
+    // handler; the old one is taken over instead and pointed at this exe.
+    static const wchar_t* LegacyProgId = L"ClaudeProfileRouter.claude";
     static const wchar_t* LinkCaps = L"Software\\ClaudeProfileSwitcher\\Capabilities";
 
     static void RegStr(const std::wstring& key, const wchar_t* name, const std::wstring& value) {
         RegSetKeyValueW(HKEY_CURRENT_USER, key.c_str(), name, REG_SZ, value.c_str(), (DWORD)((value.size() + 1) * sizeof(wchar_t)));
     }
 
+    static std::wstring HandlerCommand(const wchar_t* progId) {
+        wchar_t v[MAX_PATH * 4] = {}; DWORD n = sizeof v;
+        auto key = std::wstring(L"Software\\Classes\\") + progId + L"\\shell\\open\\command";
+        if (RegGetValueW(HKEY_CURRENT_USER, key.c_str(), nullptr, RRF_RT_REG_SZ, nullptr, v, &n) != ERROR_SUCCESS) return L"";
+        return v;
+    }
+
+    static void WriteHandler(const wchar_t* progId, const std::wstring& exe) {
+        auto cls = std::wstring(L"Software\\Classes\\") + progId;
+        RegStr(cls, nullptr, L"URL:Claude");
+        RegStr(cls, L"URL Protocol", L"");
+        RegStr(cls + L"\\DefaultIcon", nullptr, L"\"" + exe + L"\",0");
+        RegStr(cls + L"\\shell\\open\\command", nullptr, L"\"" + exe + L"\" --open-link \"%1\"");
+    }
+
     void RegisterLinks() {
         if (Paths::Demo) return;
         auto exe = Paths::Launcher();
-        auto cls = std::wstring(L"Software\\Classes\\") + LinkProgId;
-        RegStr(cls, nullptr, L"URL:Claude");
-        RegStr(cls + L"\\DefaultIcon", nullptr, L"\"" + exe + L"\",0");
-        RegStr(cls + L"\\shell\\open\\command", nullptr, L"\"" + exe + L"\" --open-link \"%1\"");
+        WriteHandler(LinkProgId, exe);
+        HKEY legacy;
+        if (RegOpenKeyExW(HKEY_CURRENT_USER, (std::wstring(L"Software\\Classes\\") + LegacyProgId).c_str(), 0, KEY_READ, &legacy) == ERROR_SUCCESS) {
+            RegCloseKey(legacy);
+            WriteHandler(LegacyProgId, exe);
+        }
         RegStr(LinkCaps, L"ApplicationName", RunValue);
         RegStr(LinkCaps, L"ApplicationDescription", Tr(L"Opens claude:// links in the Claude account you used last", L"Открывает ссылки claude:// в аккаунте Claude, которым вы пользовались последним"));
         RegStr(std::wstring(LinkCaps) + L"\\URLAssociations", L"claude", LinkProgId);
@@ -103,7 +125,12 @@ using namespace Gfx;
         IApplicationAssociationRegistration* r = nullptr;
         if (FAILED(CoCreateInstance(CLSID_ApplicationAssociationRegistration, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&r)))) return false;
         LPWSTR prog = nullptr; bool ours = false;
-        if (SUCCEEDED(r->QueryCurrentDefault(L"claude", AT_URLPROTOCOL, AL_EFFECTIVE, &prog))) { ours = _wcsicmp(prog, LinkProgId) == 0; CoTaskMemFree(prog); }
+        if (SUCCEEDED(r->QueryCurrentDefault(L"claude", AT_URLPROTOCOL, AL_EFFECTIVE, &prog))) {
+            ours = _wcsicmp(prog, LinkProgId) == 0;
+            // The old handler counts once it has been taken over and leads here.
+            if (!ours && _wcsicmp(prog, LegacyProgId) == 0) ours = HandlerCommand(LegacyProgId).find(L"--open-link") != std::wstring::npos;
+            CoTaskMemFree(prog);
+        }
         r->Release();
         return ours;
     }
