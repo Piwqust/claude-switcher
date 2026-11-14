@@ -227,13 +227,24 @@ namespace Settings {
         static CRITICAL_SECTION cs; static bool init = (InitializeCriticalSection(&cs), true); (void)init; return &cs;
     }
 
+    // Every Flag/Str/List call reads the settings, many times per refresh, so the parsed file
+    // is kept and read again only when its timestamp moves (another copy, or a hand edit).
+    static json::Value cache;
+    static ULONGLONG cacheTime = ~0ull;
+    static std::wstring cacheFile;
+
     json::Value Load() {
         EnterCriticalSection(Lock());
-        json::Value v;
-        auto text = Util::ReadText(Paths::SettingsFile);
-        if (text.empty() || !json::Parser::Parse(text, v) || v.type != json::Value::Object) v = json::Value::MakeObject();
+        auto stamp = Util::FileTime(Paths::SettingsFile);
+        if (stamp == 0 || stamp != cacheTime || cacheFile != Paths::SettingsFile) {
+            json::Value v;
+            auto text = Util::ReadText(Paths::SettingsFile);
+            if (text.empty() || !json::Parser::Parse(text, v) || v.type != json::Value::Object) v = json::Value::MakeObject();
+            cache = std::move(v); cacheTime = stamp; cacheFile = Paths::SettingsFile;
+        }
+        json::Value copy = cache;
         LeaveCriticalSection(Lock());
-        return v;
+        return copy;
     }
 
     void Save(const json::Value& v) {
@@ -241,7 +252,8 @@ namespace Settings {
         CreateDirectoryW(Paths::Root.c_str(), nullptr);
         std::wstring out; json::Write(out, v);
         // With a BOM, so the PowerShell version still reads non-ASCII labels correctly.
-        Util::WriteText(Paths::SettingsFile, out, true);
+        if (Util::WriteText(Paths::SettingsFile, out, true)) { cache = v; cacheTime = Util::FileTime(Paths::SettingsFile); cacheFile = Paths::SettingsFile; }
+        else cacheTime = ~0ull;
         LeaveCriticalSection(Lock());
     }
 
@@ -547,7 +559,8 @@ namespace Core {
             p.name = l != labels.end() && !l->second.empty() ? l->second : id;
             auto r = running.find(Key(p.path)); if (r != running.end()) p.pid = r->second;
             p.lastUsed = LastUsed(p.path);
-            p.usage = ReadUsage(p.path);
+            // Usage is for showing; lookups by name (Resolve, ValidateName) skip the file reads.
+            if (withStatus) p.usage = ReadUsage(p.path);
             out.push_back(p);
         }
         return out;
@@ -567,8 +580,11 @@ namespace Core {
         if (name.find_first_of(L"\\/:*?\"<>|") != std::wstring::npos) return Tr(L"A name can't contain \\ / : * ? \" < > |", L"В имени не может быть \\ / : * ? \" < > |");
         for (wchar_t c : name) if (c < 0x20) return Tr(L"The name contains control characters", L"В имени есть служебные символы");
         if (name[0] == L'.' || name.back() == L'.' || name.back() == L' ') return Tr(L"A name can't start with a dot or end with a dot or a space", L"Имя не может начинаться с точки или заканчиваться точкой или пробелом");
-        static const wchar_t* reserved[] = { L"CON", L"PRN", L"AUX", L"NUL", L"COM1", L"COM2", L"COM3", L"COM4", L"LPT1", L"LPT2", L"LPT3" };
+        static const wchar_t* reserved[] = { L"CON", L"PRN", L"AUX", L"NUL", L"CONIN$", L"CONOUT$",
+            L"COM1", L"COM2", L"COM3", L"COM4", L"COM5", L"COM6", L"COM7", L"COM8", L"COM9",
+            L"LPT1", L"LPT2", L"LPT3", L"LPT4", L"LPT5", L"LPT6", L"LPT7", L"LPT8", L"LPT9" };
         auto base = name.substr(0, name.find(L'.'));
+        while (!base.empty() && base.back() == L' ') base.pop_back();   // "CON .txt" is still CON
         for (auto r : reserved) if (_wcsicmp(base.c_str(), r) == 0) return Util::Format(Tr(L"%s is a name Windows reserves", L"%s — зарезервированное имя Windows"), Util::Q(name).c_str());
         if (name.size() > 40) return Tr(L"The name is too long, 40 characters at most", L"Имя слишком длинное, максимум 40 символов");
         if (_wcsicmp(name.c_str(), L"Add account") == 0) return Tr(L"The switcher's own shortcut already uses this name", L"Это имя занято ярлыком самого переключателя");
@@ -786,7 +802,7 @@ namespace Core {
         auto removed = RemoveShortcuts(p.name);
         SetLabel(p.id, newName);
         Profile renamed; Resolve(p.id, renamed);
-        renamed.pid = p.pid; renamed.usage = p.usage;
+        renamed.pid = p.pid; renamed.usage = p.usage; renamed.lastUsed = p.lastUsed;
         // Shortcuts are named after the label, so put back any that were just taken away.
         for (auto& lnk : removed) CreateProfileShortcut(renamed, Util::Parent(lnk));
         return renamed;
@@ -955,12 +971,15 @@ namespace Core {
         auto all = Settings::Load();
         auto& colors = all[L"Colors"];
         if (colors.type != json::Value::Object) colors = json::Value::MakeObject();
-        for (auto& kv : colors.obj) if (_wcsicmp(kv.first.c_str(), id.c_str()) == 0) return Palette[(int)kv.second.n % 8];
+        // Hand-edited settings may hold anything, a negative number or a string; & 7 keeps
+        // the index inside the palette.
+        auto slot = [](const json::Value& v) { return v.type == json::Value::Number ? ((int)v.n & 7) : 0; };
+        for (auto& kv : colors.obj) if (_wcsicmp(kv.first.c_str(), id.c_str()) == 0) return Palette[slot(kv.second)];
         int use[8] = {};
         std::set<std::wstring> alive;
         WIN32_FIND_DATAW fd; HANDLE h = FindFirstFileW((Paths::Root + L"\\*").c_str(), &fd);
         if (h != INVALID_HANDLE_VALUE) { do alive.insert(Util::Lower(fd.cFileName)); while (FindNextFileW(h, &fd)); FindClose(h); }
-        for (auto& kv : colors.obj) if (alive.count(Util::Lower(kv.first))) use[(int)kv.second.n % 8]++;
+        for (auto& kv : colors.obj) if (alive.count(Util::Lower(kv.first))) use[slot(kv.second)]++;
         int pick = 0; for (int i = 1; i < 8; i++) if (use[i] < use[pick]) pick = i;
         colors[id] = pick;
         Settings::Save(all);
@@ -1135,8 +1154,25 @@ namespace Core {
         json::Parser::Parse(Util::ReadText(dir + L"\\config.json", true), cfg);
         auto account = cfg.Str(L"lastKnownAccountUuid");
         static std::wstring cliPath = [] { wchar_t b[MAX_PATH]; GetEnvironmentVariableW(L"USERPROFILE", b, MAX_PATH); return std::wstring(b) + L"\\.claude.json"; }();
-        json::Value cli;
-        if (!Paths::Demo && !account.empty() && json::Parser::Parse(Util::ReadText(cliPath, true), cli)) {
+        // Claude Code's file can be megabytes and is read for every profile on every refresh,
+        // so only the part used here is kept, and the file is parsed again only when it changes.
+        static CRITICAL_SECTION cliLock; static bool cliInit = (InitializeCriticalSection(&cliLock), true); (void)cliInit;
+        static ULONGLONG cliStamp = ~0ull;
+        static json::Value cliUsage;
+        json::Value cli = json::Value::MakeObject();
+        if (!Paths::Demo && !account.empty()) {
+            EnterCriticalSection(&cliLock);
+            auto stamp = Util::FileTime(cliPath);
+            if (stamp != cliStamp) {
+                json::Value all; cliUsage = json::Value();
+                if (json::Parser::Parse(Util::ReadText(cliPath, true), all))
+                    if (auto c = all.Find(L"cachedUsageUtilization")) cliUsage = *c;
+                cliStamp = stamp;
+            }
+            if (!cliUsage.IsNull()) cli[L"cachedUsageUtilization"] = cliUsage;
+            LeaveCriticalSection(&cliLock);
+        }
+        {
             auto c = cli.Find(L"cachedUsageUtilization");
             auto util = c ? c->Find(L"utilization") : nullptr;
             long long at = c ? (long long)c->Num(L"fetchedAtMs", 0) : 0;
@@ -1158,11 +1194,24 @@ namespace Core {
         return u;
     }
 
+    // Appended rather than read and written back whole on every line; it starts over once it
+    // passes 256 KB.
     void Log(const std::wstring& text) {
         CreateDirectoryW(Paths::Root.c_str(), nullptr);
         SYSTEMTIME t; GetLocalTime(&t);
         auto line = Util::Format(L"[%04d-%02d-%02dT%02d:%02d:%02d] ", t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond) + text + L"\r\n\r\n";
-        auto old = Util::ReadText(Paths::Log);
-        Util::WriteText(Paths::Log, old + line, false);
+        int n = WideCharToMultiByte(CP_UTF8, 0, line.c_str(), (int)line.size(), nullptr, 0, nullptr, nullptr);
+        std::string bytes(n, '\0');
+        WideCharToMultiByte(CP_UTF8, 0, line.c_str(), (int)line.size(), &bytes[0], n, nullptr, nullptr);
+        static CRITICAL_SECTION cs; static bool init = (InitializeCriticalSection(&cs), true); (void)init;
+        EnterCriticalSection(&cs);
+        HANDLE h = CreateFileW(Paths::Log.c_str(), FILE_APPEND_DATA | FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_ALWAYS, 0, nullptr);
+        LARGE_INTEGER size{};
+        if (h != INVALID_HANDLE_VALUE && GetFileSizeEx(h, &size) && size.QuadPart > (256 << 10)) {
+            CloseHandle(h);
+            h = CreateFileW(Paths::Log.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, 0, nullptr);
+        }
+        if (h != INVALID_HANDLE_VALUE) { DWORD wrote = 0; WriteFile(h, bytes.data(), (DWORD)bytes.size(), &wrote, nullptr); CloseHandle(h); }
+        LeaveCriticalSection(&cs);
     }
 }
