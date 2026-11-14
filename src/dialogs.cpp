@@ -17,13 +17,17 @@ namespace {
             sizeToContent = true; backdrop = 2;
             Create(title, WS_POPUP | WS_CAPTION | WS_SYSMENU, owner ? 0 : WS_EX_TOPMOST, w, 200, owner);
             open.insert(this);
-            InvalidateRect(hwnd, nullptr, FALSE); UpdateWindow(hwnd);
-            RECT wr; GetWindowRect(hwnd, &wr);
             RECT ref;
             if (owner) GetWindowRect(owner, &ref);
             else { POINT pt; GetCursorPos(&pt); MONITORINFO mi{ sizeof mi }; GetMonitorInfoW(MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST), &mi); ref = mi.rcWork; }
-            int ww = wr.right - wr.left, wh = wr.bottom - wr.top;
-            SetWindowPos(hwnd, nullptr, (ref.left + ref.right - ww) / 2, (ref.top + ref.bottom - wh) / 2, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+            // A hidden window gets no WM_PAINT, so it is measured directly: before centring, and
+            // again after the move in case that monitor has another scale.
+            for (int pass = 0; pass < 2; pass++) {
+                LayoutNow();
+                RECT wr; GetWindowRect(hwnd, &wr);
+                int ww = wr.right - wr.left, wh = wr.bottom - wr.top;
+                SetWindowPos(hwnd, nullptr, (ref.left + ref.right - ww) / 2, (ref.top + ref.bottom - wh) / 2, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+            }
             if (owner) EnableWindow(owner, FALSE);
             Show(true);
             MSG m;

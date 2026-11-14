@@ -5,6 +5,13 @@ Each version's section becomes the description of its GitHub release.
 
 ## [Unreleased]
 
+## [1.1.1] — 2026-11-14
+
+### Fixed
+
+- The tray list no longer opens partly under the taskbar the first time after the switcher starts or updates. It is now measured before it is placed, and stays against the taskbar if its height changes while open. Dialogs and the main window are centred by their real size too.
+- Settings → About says "Checked today, 13:47" instead of "Checked Today, 13:47".
+
 ## [1.1.0] — 2026-11-14
 
 ### New
@@ -81,7 +88,8 @@ The first release. Claude Profile Switcher is built on [Claude Code Desktop Swit
 - Start with Windows uses `HKCU\…\Run` instead of a shortcut in the Startup folder. The old shortcut is removed.
 - Messages appear as notifications and dialogs instead of a status line at the bottom of the window.
 
-[Unreleased]: https://github.com/Piwqust/claude-switcher/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/Piwqust/claude-switcher/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/Piwqust/claude-switcher/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/Piwqust/claude-switcher/compare/v1.0.4...v1.1.0
 [1.0.4]: https://github.com/Piwqust/claude-switcher/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/Piwqust/claude-switcher/compare/v1.0.2...v1.0.3

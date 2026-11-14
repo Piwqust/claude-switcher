@@ -105,6 +105,9 @@ public:
     RectF Client() const;
     float FrameMs() const { return frameDt; }
     ID2D1RenderTarget* RT() { return rt; }
+    // Builds a frame now, even while hidden (Windows sends no WM_PAINT to a hidden window),
+    // so a window that sizes to its content has its real size before it is placed and shown.
+    void LayoutNow() { if (hwnd) Render(); }
 
     // ---- common controls drawn in the Windows 11 style
     bool Button(UINT id, RectF r, const std::wstring& label, bool primary, std::function<void()> click, bool danger = false, bool enabled = true);
@@ -126,6 +129,7 @@ protected:
     virtual void OnMouseDown() {}
     virtual void OnDeactivate() {}
     virtual void OnShown() {}
+    virtual void OnResized() {}            // a size-to-content window just changed its own height
     virtual LRESULT Extra(UINT m, WPARAM w, LPARAM l, bool& handled) { return 0; }
 
     float mx = -1, my = -1;

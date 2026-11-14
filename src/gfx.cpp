@@ -216,6 +216,7 @@ void Surface::Render() {
             if (!borderless) AdjustWindowRectExForDpi(&wr, style, FALSE, ex, GetDpiForWindow(hwnd));
             SetWindowPos(hwnd, nullptr, 0, 0, wr.right - wr.left, wr.bottom - wr.top, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
             Invalidate();
+            OnResized();
         }
     }
 }

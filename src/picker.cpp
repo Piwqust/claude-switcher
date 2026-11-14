@@ -316,10 +316,14 @@ namespace Picker {
             // Centred on the monitor the pointer is on, where the person is looking.
             POINT pt; GetCursorPos(&pt);
             MONITORINFO mi{ sizeof mi }; GetMonitorInfoW(MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST), &mi);
-            RECT wr; GetWindowRect(w.hwnd, &wr);
-            int ww = wr.right - wr.left, wh = wr.bottom - wr.top;
-            SetWindowPos(w.hwnd, nullptr, mi.rcWork.left + (mi.rcWork.right - mi.rcWork.left - ww) / 2,
-                         mi.rcWork.top + (mi.rcWork.bottom - mi.rcWork.top - wh) / 2 - 40, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+            // Measured before centring, and again after the move in case that monitor has another scale.
+            for (int pass = 0; pass < 2; pass++) {
+                w.LayoutNow();
+                RECT wr; GetWindowRect(w.hwnd, &wr);
+                int ww = wr.right - wr.left, wh = wr.bottom - wr.top;
+                SetWindowPos(w.hwnd, nullptr, mi.rcWork.left + (mi.rcWork.right - mi.rcWork.left - ww) / 2,
+                             mi.rcWork.top + (mi.rcWork.bottom - mi.rcWork.top - wh) / 2 - 40, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+            }
             w.FocusLikely();
         }
         if (IsIconic(w.hwnd)) ShowWindow(w.hwnd, SW_RESTORE);

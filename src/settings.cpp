@@ -217,7 +217,14 @@ namespace {
                 case P::Downloading: title = Util::Format(Tr(L"Downloading %s…", L"Скачиваю %s…"), Update::Latest().c_str()); break;
                 case P::Installing: title = Tr(L"Installing the update…", L"Устанавливаю обновление…"); break;
                 case P::Failed: title = Tr(L"Couldn't update", L"Не удалось обновить"); desc = Update::Problem(); descColor = T.danger; break;
-                case P::Current: title = Tr(L"The switcher is up to date", L"Установлена последняя версия"); desc = Tr(L"Checked ", L"Проверено: ") + Util::When(Update::CheckedAt()); break;
+                case P::Current: {
+                    // "Checked today, 13:47": When() starts with a capital for the cards, not mid-sentence.
+                    auto when = Util::When(Update::CheckedAt());
+                    for (auto word : { Tr(L"Today", L"Сегодня"), Tr(L"Yesterday", L"Вчера") })
+                        if (when.rfind(word, 0) == 0) when[0] = towlower(when[0]);
+                    title = Tr(L"The switcher is up to date", L"Установлена последняя версия"); desc = Tr(L"Checked ", L"Проверено: ") + when;
+                    break;
+                }
                 default: title = Tr(L"Updates", L"Обновления"); desc = Tr(L"New versions come from the project's GitHub releases", L"Новые версии берутся из релизов проекта на GitHub"); break;
                 }
                 float h = Card(y, title, desc, 150, 68, descColor);
