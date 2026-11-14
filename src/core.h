@@ -65,6 +65,7 @@ namespace Settings {
     json::Value Load();
     void Save(const json::Value& v);
     void Set(const std::wstring& key, json::Value value);
+    void Update(const std::function<void(json::Value&)>& change);   // read, change and write as one step
     bool Flag(const std::wstring& key, bool def);
     int Int(const std::wstring& key, int def);
     std::wstring Str(const std::wstring& key, const std::wstring& def = L"");
@@ -120,12 +121,14 @@ namespace Core {
     bool Close(const std::wstring& id);            // ends Claude for good, tray included; false when it wasn't open
     void Restart(const std::wstring& id);          // ends the open window, if any, and starts it again
     Profile Rename(const Profile& p, const std::wstring& newName);
-    void Delete(const Profile& p);                 // throws std::wstring on refusal
+    void Delete(const Profile& p);                 // closes its Claude first; throws std::wstring when it can't
+    void SweepDeleted();                           // finishes deletes a locked file held up
 
     COLORREF ProfileColor(const std::wstring& id);
     std::wstring BadgeLetter(const std::wstring& label);
     std::wstring ProfileIconPath(const Profile& p);
     std::wstring AddAccountIconPath();
+    void RemoveProfileIcons(const std::wstring& id);
     void WriteAppIcon(const std::wstring& path);   // the switcher's own icon, used at build time
     void WriteIconSamples(const std::wstring& dir);
     std::wstring CreateProfileShortcut(const Profile& p, const std::wstring& dir);

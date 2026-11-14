@@ -6,6 +6,7 @@
 #include <set>
 
 std::wstring Item::Status() const {
+    if (deleting) return Tr(L"Deleting…", L"Удаляется…");
     if (launching) return Tr(L"Starting…", L"Запускается…");
     if (closing) return Tr(L"Closing…", L"Закрывается…");
     if (p.pid) return Tr(L"Open", L"Открыт");
@@ -17,7 +18,7 @@ namespace App {
     HWND tray = nullptr;
     HICON smallIcon = nullptr;
 
-    enum : UINT { WM_TRAY = WM_APP + 1, WM_REFRESHED, WM_LAUNCHED, WM_ADDED, WM_SIGNAL, WM_RENAME, WM_CODE_AUTH, WM_RUN };
+    enum : UINT { WM_TRAY = WM_APP + 1, WM_REFRESHED, WM_LAUNCHED, WM_ADDED, WM_SIGNAL, WM_RENAME, WM_CODE_AUTH, WM_RUN, WM_DELETED };
     enum : UINT_PTR { TimerRefresh = 1, TimerSoon = 2, TimerHide = 3, TimerCode = 4, TimerUpdate = 5 };
     const int HotkeyPicker = 1, HotkeyAccount = 10;   // 11..19 for Ctrl+Alt+1..9
 
@@ -308,7 +309,9 @@ namespace App {
 
     struct LaunchResult { std::vector<std::wstring> errors; bool closing = false; };
 
-    void Launch(const std::vector<std::wstring>& ids, bool fromPicker) {
+    void Launch(const std::vector<std::wstring>& all, bool fromPicker) {
+        std::vector<std::wstring> ids;   // an account being deleted is not opened again
+        for (auto& id : all) { auto it = Find(id); if (!it || !it->deleting) ids.push_back(id); }
         if (ids.empty()) return;
         for (auto& id : ids) if (auto it = Find(id)) if (!it->running()) { it->launching = true; it->launchAt = GetTickCount64(); }
         RedrawAll();
@@ -398,24 +401,38 @@ namespace App {
         } catch (const std::wstring& e) { Dialogs::Info(Owner(nullptr), Tr(L"Couldn't rename", L"Не удалось переименовать"), e); }
     }
 
+    struct DeleteResult { std::wstring id, error; };
+
     void Delete(std::wstring id, HWND owner) {
         auto it = Find(id);
-        if (!it || it->p.isDefault) return;
+        if (!it || it->p.isDefault || it->deleting) return;
         auto name = it->name;
-        if (!Dialogs::Ask(Owner(owner), Util::Format(Tr(L"Delete %s?", L"Удалить %s?"), Util::Q(name).c_str()),
-                Tr(L"This signs the account out on this PC. Its profile folder, saved sign-in and shortcuts are deleted; other accounts stay",
-                   L"Вы выйдете из этого аккаунта на этом компьютере. Папка профиля, сохранённый вход и ярлыки удалятся, остальные аккаунты останутся"),
-                Tr(L"Delete", L"Да, удалить"), true)) return;
-        it = Find(id);
-        if (!it) return;
-        try {
-            auto profile = it->p;
-            Core::Delete(profile);
-            it = Find(id);
-            if (it) items.erase(items.begin() + (it - items.data()));
-            SaveAutoOpen();
-            Refresh();
-        } catch (const std::wstring& e) { Dialogs::Info(Owner(owner), Tr(L"Couldn't delete", L"Не удалось удалить"), e); }
+        std::wstring text = Tr(L"This signs the account out on this PC. Its profile folder, saved sign-in and shortcuts are deleted; other accounts stay",
+                               L"Вы выйдете из этого аккаунта на этом компьютере. Папка профиля, сохранённый вход и ярлыки удалятся, остальные аккаунты останутся");
+        if (id == codeProfile) text = Tr(L"Claude Code goes back to its previous login. ", L"Claude Code вернётся к прежнему входу. ") + text;
+        if (it->running()) text = Tr(L"Its Claude window and Claude Code sessions will be closed first. ", L"Сначала закроются его окно Claude и сеансы Claude Code. ") + text;
+        if (!Dialogs::Ask(Owner(owner), Util::Format(Tr(L"Delete %s?", L"Удалить %s?"), Util::Q(name).c_str()), text, Tr(L"Delete", L"Да, удалить"), true)) return;
+        it = Find(id);   // the list may have been rebuilt while the dialog was open
+        if (!it || it->deleting) return;
+        it->deleting = true; it->checked = false;
+        RedrawAll();
+        // A profile is thousands of files; deleting them must not freeze the windows.
+        auto p = it->p;
+        bool code = id == codeProfile;
+        std::thread([p, code] {
+            auto r = new DeleteResult{ p.id };
+            // A Code default that no longer exists would leave Code on that account's token.
+            if (code) {
+                try { CodeAuth::Restore(); }
+                catch (const std::wstring& e) { Core::Log(L"Delete " + p.id + L": Claude Code login: " + e); }
+                catch (...) {}
+            }
+            try { Core::Delete(p); }
+            catch (const std::wstring& e) { r->error = e; }
+            catch (const std::exception& e) { r->error = Util::Format(L"%S", e.what()); }
+            catch (...) { r->error = Tr(L"Something went wrong", L"Что-то пошло не так"); }
+            if (!PostMessageW(tray, WM_DELETED, 0, (LPARAM)r)) delete r;
+        }).detach();
     }
 
     void CopyChats(HWND owner, const std::vector<CodeSession>& picked, const std::wstring& targetId) {
@@ -447,7 +464,7 @@ namespace App {
         // The caller often passes Item::p.id. Own it across the menu's nested
         // message loop: a refresh replaces and frees the entire item vector.
         auto it = Find(id);
-        if (!it) return;
+        if (!it || it->deleting) return;
         WinShell::DarkMenus(Gfx::T.dark);
         WinShell::AllowDark(owner, Gfx::T.dark);
         HMENU m = CreatePopupMenu();
@@ -558,6 +575,23 @@ namespace App {
             Refresh();
             return 0;
         }
+        case WM_DELETED: {
+            auto r = (DeleteResult*)l;
+            if (r->error.empty()) {
+                if (auto it = Find(r->id)) items.erase(items.begin() + (it - items.data()));
+                SaveAutoOpen();
+                WinShell::UpdateJumpList(Profiles());
+                RedrawAll();
+                UpdateCode(L"", false);
+            } else {
+                if (auto it = Find(r->id)) it->deleting = false;
+                RedrawAll();
+                Dialogs::Info(Owner(nullptr), Tr(L"Couldn't delete", L"Не удалось удалить"), r->error);
+            }
+            delete r;
+            Refresh();
+            return 0;
+        }
         case WM_CODE_AUTH: {
             auto r = (CodeResult*)l;
             codeBusy = false;
@@ -627,6 +661,8 @@ namespace App {
         AddIcon();
         RegisterPicker();
         RegisterAccounts();
+        // Finishes any delete a locked file held up last time; off the UI thread.
+        std::thread([] { Core::SweepDeleted(); }).detach();
         WinShell::DarkMenus(Gfx::T.dark);
 
         showEvt = CreateEventW(nullptr, FALSE, FALSE, Core::ShowEvent);

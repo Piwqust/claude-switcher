@@ -182,6 +182,7 @@ namespace Core {
         return IconFile(p.id, BadgeLetter(p.name), ProfileColor(p.id), false);
     }
     std::wstring AddAccountIconPath() { return IconFile(L"add-account", L"plus", RGB(46, 125, 74), false, true); }
+    void RemoveProfileIcons(const std::wstring& id) { RemoveIconsFor(id); }
     void WriteAppIcon(const std::wstring& path) { WriteIco(path, DrawApp); }
 
     // For reviewing the look: the app icon and a few account icons, written to a folder.

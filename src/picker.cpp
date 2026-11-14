@@ -180,7 +180,7 @@ namespace {
                 Fill({ f.x - 1, f.B() - 1, f.w + 2, 2 }, T.accent, 1);
             } else
                 Text(it.name, { r.x + 8, r.y + 94, r.w - 16, 22 }, Font(14, DWRITE_FONT_WEIGHT_SEMI_BOLD), T.text, Align::Center);
-            auto statusColor = it.launching || it.closing ? T.accentText : it.running() ? T.success : T.text2;
+            auto statusColor = it.launching || it.closing || it.deleting ? T.accentText : it.running() ? T.success : T.text2;
             bool code = App::CodeProfile() == it.p.id;
             auto status = code ? std::wstring(Tr(L"Claude Code default", L"Основной для Code")) : it.Status();
             Text(status, { r.x + 8, r.y + 116, r.w - 16, 18 }, Font(12), code ? T.accentText : statusColor, Align::Center);
