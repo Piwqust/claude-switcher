@@ -5,6 +5,8 @@ Each version's section becomes the description of its GitHub release.
 
 ## [Unreleased]
 
+## [1.1.2] — 2026-11-14
+
 Most of these fixes come from [@z6gg](https://github.com/z6gg) in [#6](https://github.com/Piwqust/claude-switcher/pull/6). Thank you!
 
 ### Fixed
@@ -107,7 +109,8 @@ The first release. Claude Profile Switcher is built on [Claude Code Desktop Swit
 - Start with Windows uses `HKCU\…\Run` instead of a shortcut in the Startup folder. The old shortcut is removed.
 - Messages appear as notifications and dialogs instead of a status line at the bottom of the window.
 
-[Unreleased]: https://github.com/Piwqust/claude-switcher/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/Piwqust/claude-switcher/compare/v1.1.2...HEAD
+[1.1.2]: https://github.com/Piwqust/claude-switcher/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/Piwqust/claude-switcher/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/Piwqust/claude-switcher/compare/v1.0.4...v1.1.0
 [1.0.4]: https://github.com/Piwqust/claude-switcher/compare/v1.0.3...v1.0.4
