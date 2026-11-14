@@ -1,0 +1,151 @@
+---
+import { Picture, getImage } from 'astro:assets';
+import { dict, href, pageColor, paneColors, site, type Lang } from '../data/site';
+import { shot } from '../data/shots';
+import Hero from './Hero.astro';
+import Keys from './Keys.astro';
+import DownloadButton from './DownloadButton.astro';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = dict[lang];
+const guideAnchor = ['startup', 'tray', 'usage', 'picker', 'taskbar', 'chats', 'settings', 'settings'];
+const rows = await Promise.all(t.features.rows.map(async (r, i) => {
+  const img = r.shot ? shot(lang, r.shot) : null;
+  const preview = img ? await getImage({ src: img, width: 760, format: 'webp' }) : null;
+  const thumb = img ? await getImage({ src: img, width: 480, format: 'webp' }) : null;
+  return { ...r, preview: preview?.src, thumb: thumb?.src, href: `${href(lang, 'guide')}#${guideAnchor[i]}` };
+}));
+const fig = t.mech.fig;
+---
+<Hero lang={lang} />
+
+<section class="statement" aria-label={lang === 'ru' ? 'Зачем это' : 'Why'}>
+  <p class="statement__text" data-split="lines">
+    <span class="statement__a">{t.statement.a}</span> <span class="statement__b">{t.statement.b}</span>
+  </p>
+</section>
+
+<section class="picker" aria-labelledby="picker-title">
+  <figure class="picker__shot" data-reveal="beside">
+    <Picture src={shot(lang, 'picker-dark')} formats={['avif', 'webp']} widths={[720, 1100, 1450]} sizes="(max-width: 767px) 100vw, 58vw" alt={t.picker.alt} />
+    <figcaption>{t.picker.caption}</figcaption>
+  </figure>
+  <div class="picker__text">
+    <h2 class="h2" id="picker-title" data-split="lines">{t.picker.h2}</h2>
+    <p class="picker__body">{t.picker.body}</p>
+    <p class="picker__try" data-fine-only>{t.picker.tryIt}</p>
+    <dl class="keytable" data-keytable>
+      {t.picker.keys.map((k) => (
+        <div class="keytable__row">
+          <dt><Keys keys={k.keys} /></dt>
+          <dd>{k.does}</dd>
+        </div>
+      ))}
+    </dl>
+  </div>
+</section>
+
+<section class="mech" aria-labelledby="mech-title" data-mech>
+  <div class="mech__head">
+    <h2 class="h2" id="mech-title" data-split="lines">{t.mech.h2}</h2>
+    <p class="mech__intro">{t.mech.intro}</p>
+  </div>
+  <div class="mech__grid">
+    <div class="mech__stage" data-stage data-state="0">
+      <figure class="fig" aria-hidden="true">
+        <div class="fig__switcher"><span class="fig__chip">{fig.switcher}</span></div>
+        <svg class="fig__wires" viewBox="0 0 300 60" preserveAspectRatio="none">
+          <path class="fig__wire fig__wire--main" d="M150 0 C150 30 50 30 50 60" />
+          <path class="fig__wire fig__wire--work" d="M150 0 L150 60" />
+          <path class="fig__wire fig__wire--personal" d="M150 0 C150 30 250 30 250 60" />
+        </svg>
+        <div class="fig__labels">
+          <span class="fig__label fig__label--main">shell:AppsFolder</span>
+          <span class="fig__label fig__label--dir">--user-data-dir</span>
+        </div>
+        <div class="fig__windows">
+          {[fig.main, fig.work, fig.personal].map((name, i) => (
+            <div class={`fig__win fig__win--${i}`} style={`--pane:${paneColors[i]}`}>
+              <div class="fig__win-fill">
+                <span class="fig__win-bar"><span class="fig__win-dot"></span>{name}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div class="fig__folders">
+          <div class="fig__folder fig__folder--0"><span class="fig__ico"></span><span>Claude<br />{fig.untouched}</span></div>
+          <div class="fig__folder fig__folder--1"><span class="fig__ico"></span><span>ClaudeProfiles\<br />Account 2</span></div>
+          <div class="fig__folder fig__folder--2"><span class="fig__ico"></span><span>ClaudeProfiles\<br />Account 3</span></div>
+        </div>
+      </figure>
+    </div>
+    <ol class="mech__chapters">
+      {t.mech.chapters.map((c, i) => (
+        <li class="chapter" data-chapter={i}>
+          <h3 class="chapter__h">{c.h}</h3>
+          <p class="chapter__p">{c.p}</p>
+          <code class="chapter__code">{c.code}</code>
+        </li>
+      ))}
+    </ol>
+  </div>
+  <p class="mech__more"><a class="next next--small" style={`--to:${pageColor.how}`} href={href(lang, 'how')}><span class="next__label">{t.mech.more}</span><span class="next__arrow" aria-hidden="true">→</span></a></p>
+</section>
+
+<section class="facts" aria-labelledby="facts-title">
+  <h2 class="h2 facts__title" id="facts-title" data-split="lines">{t.facts.h2}</h2>
+  <ul class="facts__list">
+    {t.facts.items.map((f, i) => (
+      <li class="fact" data-reveal="beside" data-delay={String(i * 0.08)}>
+        <span class="fact__n"><span data-count={f.n}>{f.n}</span>{f.u && <span class="fact__u">{f.u}</span>}</span>
+        <span class="fact__l">{f.l}</span>
+      </li>
+    ))}
+  </ul>
+  <p class="facts__note">
+    {t.facts.note} {t.facts.credit} <a class="link" href={site.original}>{t.facts.creditName}</a> {t.facts.creditBy}
+  </p>
+</section>
+
+<section class="features" aria-labelledby="features-title">
+  <h2 class="h2" id="features-title" data-split="lines">{t.features.h2}</h2>
+  <ul class="index" data-index>
+    {rows.map((r) => (
+      <li class="index__item">
+        <a class="index__row" href={r.href} data-preview={r.preview} data-preview-alt={r.alt}>
+          <span class="index__panel" aria-hidden="true"></span>
+          <span class="index__t">{r.t}</span>
+          <span class="index__d">{r.d}</span>
+          <span class="index__arrow" aria-hidden="true">
+            <svg viewBox="0 0 16 16" width="18" height="18"><path d="M2 8h11M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </span>
+          {r.thumb && <img class="index__thumb" src={r.thumb} alt="" width="480" height="300" loading="lazy" decoding="async" />}
+        </a>
+      </li>
+    ))}
+  </ul>
+  <div class="preview" aria-hidden="true" data-preview-box><img alt="" width="760" height="480" /></div>
+</section>
+
+<section class="finale" aria-labelledby="finale-title">
+  <h2 class="finale__title" id="finale-title" data-split="words">{t.finale.h2}</h2>
+  <ol class="finale__steps">
+    {t.finale.steps.map((s, i) => (
+      <li class="step" data-reveal="beside" data-delay={String(i * 0.1)}>
+        <span class="step__n">{i + 1}</span>
+        <p>{s}</p>
+      </li>
+    ))}
+  </ol>
+  <div class="finale__actions">
+    <div class="finale__btns">
+      <DownloadButton lang={lang} size="lg" />
+      <DownloadButton lang={lang} arch="arm64" size="md" ghost />
+    </div>
+    <div class="finale__notes">
+      <p>{t.dl.size} {t.finale.needs} <a class="link" href={site.claude}>{t.finale.claudeDesktop}</a>.</p>
+      <p>{t.dl.which}</p>
+      <p class="finale__smart">{t.finale.smart}</p>
+    </div>
+  </div>
+</section>

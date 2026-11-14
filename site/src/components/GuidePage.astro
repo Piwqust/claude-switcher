@@ -1,0 +1,133 @@
+---
+import { Picture } from 'astro:assets';
+import { dict, href, pageColor, site, type Lang } from '../data/site';
+import { shot } from '../data/shots';
+import PageWindow from './PageWindow.astro';
+import DownloadButton from './DownloadButton.astro';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = dict[lang];
+const g = t.guide;
+const s = g.sections;
+const wbr = (text: string) => text.split('\\');
+const order = ['install', 'picker', 'startup', 'tray', 'taskbar', 'settings', 'chats', 'usage', 'cli', 'trouble', 'uninstall'] as const;
+---
+<PageWindow color={pageColor.guide} num="3" name={g.eyebrow} status={t.hero.open}>
+  <h1 class="pagewin__title pagewin__title--long" data-split="words" data-intro data-delay="0.3">{g.h1}</h1>
+</PageWindow>
+
+<div class="guide">
+  <nav class="guide__toc" aria-labelledby="toc-title">
+    <p class="guide__toc-title" id="toc-title">{g.toc}</p>
+    <ul>
+      {order.map((k) => <li><a class="toc-link" href={`#${k}`}>{s[k]}</a></li>)}
+    </ul>
+  </nav>
+
+  <details class="guide__toc-m">
+    <summary><span>{g.toc}</span><span class="faq__icon" aria-hidden="true"></span></summary>
+    <ul>{order.map((k) => <li><a href={`#${k}`}>{s[k]}</a></li>)}</ul>
+  </details>
+
+  <div class="guide__body">
+    <section id="install" class="gsec">
+      <h2 class="h3">{s.install}</h2>
+      <ol class="numbered">{g.install.map((x) => <li>{wbr(x).map((part, i) => <>{i > 0 && <>\<wbr /></>}{part}</>)}</li>)}</ol>
+      <div class="guide__dl">
+        <DownloadButton lang={lang} size="md" />
+        <DownloadButton lang={lang} arch="arm64" size="md" ghost />
+      </div>
+      <p>{g.hash}</p>
+      <pre class="code"><code>Get-FileHash .\ClaudeProfileSwitcher-x64.exe -Algorithm SHA256</code></pre>
+      <p>{g.update}</p>
+    </section>
+
+    <section id="picker" class="gsec">
+      <h2 class="h3">{s.picker}</h2>
+      <p>{g.pickerIntro}</p>
+      <figure class="gshot">
+        <Picture src={shot(lang, 'picker-dark')} formats={['avif', 'webp']} widths={[720, 1100]} sizes="(max-width: 767px) 100vw, 640px" alt={t.picker.alt} loading="lazy" />
+      </figure>
+      <h3 class="h4">{g.firstH}</h3>
+      <ol class="numbered">{g.first.map((x) => <li>{x}</li>)}</ol>
+      <div class="table-wrap" tabindex="0" role="region" aria-label={s.picker}>
+        <table class="table">
+          <thead><tr>{g.keysCols.map((c) => <th scope="col">{c}</th>)}</tr></thead>
+          <tbody>{g.keys.map((r) => <tr><th scope="row">{r[0]}</th><td>{r[1]}</td><td><kbd class="key key--inline">{r[2]}</kbd></td></tr>)}</tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="startup" class="gsec">
+      <h2 class="h3">{s.startup}</h2>
+      <ul class="bullets">{g.startup.map((x) => <li>{x}</li>)}</ul>
+      <p>{g.startupNote}</p>
+      <figure class="gshot">
+        <Picture src={shot(lang, 'startup-dark')} formats={['avif', 'webp']} widths={[720, 1100]} sizes="(max-width: 767px) 100vw, 640px" alt={t.features.rows[0].alt} loading="lazy" />
+      </figure>
+    </section>
+
+    <section id="tray" class="gsec">
+      <h2 class="h3">{s.tray}</h2>
+      <p>{g.tray}</p>
+      <figure class="gshot gshot--split">
+        <Picture src={shot(lang, 'tray')} formats={['avif', 'webp']} widths={[720, 1100]} sizes="(max-width: 767px) 100vw, 640px" alt={t.features.rows[1].alt} loading="lazy" />
+      </figure>
+    </section>
+
+    <section id="taskbar" class="gsec">
+      <h2 class="h3">{s.taskbar}</h2>
+      <dl class="pairs">{g.taskbar.map((d) => <div><dt>{d.h}</dt><dd>{d.p}</dd></div>)}</dl>
+      <figure class="gshot gshot--wide">
+        <Picture src={shot(lang, 'icons')} formats={['avif', 'webp']} widths={[900, 1400]} sizes="(max-width: 767px) 100vw, 760px" alt={t.features.rows[4].alt} loading="lazy" />
+      </figure>
+    </section>
+
+    <section id="settings" class="gsec">
+      <h2 class="h3">{s.settings}</h2>
+      <p>{g.settings}</p>
+      <figure class="gshot gshot--wide gshot--split">
+        <Picture src={shot(lang, 'settings')} formats={['avif', 'webp']} widths={[900, 1400]} sizes="(max-width: 767px) 100vw, 760px" alt={t.features.rows[6].alt} loading="lazy" />
+      </figure>
+    </section>
+
+    <section id="chats" class="gsec">
+      <h2 class="h3">{s.chats}</h2>
+      <p>{g.chats}</p>
+    </section>
+
+    <section id="usage" class="gsec">
+      <h2 class="h3">{s.usage}</h2>
+      <p>{g.usage} <a class="link" href={`${href(lang, 'how')}#usage`}>{t.how.usageH}</a>.</p>
+    </section>
+
+    <section id="cli" class="gsec">
+      <h2 class="h3">{s.cli}</h2>
+      <div class="cli">
+        {g.cli.map((r) => (
+          <div class="cli__row"><code class="cli__cmd">{r[0]}</code><p>{r[1]}</p></div>
+        ))}
+      </div>
+    </section>
+
+    <section id="trouble" class="gsec">
+      <h2 class="h3">{s.trouble}</h2>
+      <div class="faq">
+        {g.trouble.map((q) => (
+          <details class="faq__item">
+            <summary><span>{q.q}</span><span class="faq__icon" aria-hidden="true"></span></summary>
+            <p>{q.a}</p>
+          </details>
+        ))}
+      </div>
+    </section>
+
+    <section id="uninstall" class="gsec">
+      <h2 class="h3">{s.uninstall}</h2>
+      <ol class="numbered">{g.uninstall.map((x) => <li>{wbr(x).map((part, i) => <>{i > 0 && <>\<wbr /></>}{part}</>)}</li>)}</ol>
+    </section>
+
+    <p class="doc__next"><a class="next" style={`--to:${pageColor.how}`} href={href(lang, 'how')}><span class="next__label">{g.next}</span><span class="next__arrow" aria-hidden="true">→</span></a></p>
+    <p class="doc__small"><a class="link link--pad" href={site.releases}>{t.footer.releases}</a></p>
+  </div>
+</div>

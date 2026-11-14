@@ -1,0 +1,45 @@
+---
+// The signature: account windows standing side by side, all open. motion/panes.ts drives them.
+import { dict, paneColors, type Lang } from '../data/site';
+import DownloadButton from './DownloadButton.astro';
+import Keys from './Keys.astro';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = dict[lang];
+const h = t.hero;
+const label = lang === 'ru'
+  ? `Три окна Claude рядом, во всех выполнен вход: ${h.panes.map((p) => p.name).join(', ')}.`
+  : `Three Claude windows side by side, all signed in: ${h.panes.map((p) => p.name).join(', ')}.`;
+---
+<section class="hero" data-hero aria-labelledby="hero-title">
+  <div class="panes" data-panes role="img" aria-label={label}>
+    {h.panes.map((p, i) => (
+      <div class="pane" data-pane style={`--pane:${paneColors[i]}`}>
+        <div class="pane__in" data-pane-in>
+          <div class="pane__bar">
+            <span class="pane__key">{p.key}</span>
+            <span class="pane__status"><span class="pane__dot" data-dot></span>{h.open}</span>
+          </div>
+          <p class="pane__name" data-pane-name>{p.name}</p>
+          <p class="pane__path"><span class="pane__cmd">{p.cmd}</span><span class="pane__dir">{p.path}</span><span class="pane__caret" data-caret></span></p>
+        </div>
+      </div>
+    ))}
+    <div class="pane pane--add" data-pane>
+      <div class="pane__in" data-pane-in>
+        <span class="pane__center"><span class="pane__plus">+</span><span class="pane__add-label">{h.add}</span></span>
+      </div>
+    </div>
+  </div>
+  <h1 class="hero__title" id="hero-title" data-split="words" data-intro data-delay="0.35">{h.h1}</h1>
+  <div class="hero__foot">
+    <p class="hero__lede">{h.lede}</p>
+    <div class="hero__actions" data-reveal="beside" data-intro data-delay="0.75">
+      <div class="hero__btns">
+        <DownloadButton lang={lang} size="lg" />
+        <DownloadButton lang={lang} arch="arm64" size="md" ghost />
+      </div>
+      <p class="hero__shortcut"><Keys keys={['Ctrl', 'Alt', 'C']} /> <span>{h.shortcut}</span><span class="hero__try" data-fine-only>{h.keysHint}</span></p>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,21 @@
+---
+// Primary action. The fill opens from the right edge, like a window opening beside.
+import { dict, site, type Lang } from '../data/site';
+interface Props { lang: Lang; arch?: 'x64' | 'arm64'; size?: 'sm' | 'md' | 'lg'; ghost?: boolean }
+const { lang, arch = 'x64', size = 'md', ghost = false } = Astro.props;
+const t = dict[lang].dl;
+const label = arch === 'x64' ? t.x64 : t.arm64;
+const note = arch === 'x64' ? t.x64Note : t.arm64Note;
+---
+<a
+  class:list={['btn', `btn--${size}`, { 'btn--ghost': ghost }]}
+  href={arch === 'x64' ? site.x64 : site.arm64}
+  data-fill
+  data-astro-reload
+>
+  <span class="btn__fill" aria-hidden="true"></span>
+  <span class="btn__label">{label}{size !== 'sm' && <span class="btn__note">{note}</span>}</span>
+  <span class="btn__arrow" aria-hidden="true">
+    <svg viewBox="0 0 16 16" width="16" height="16"><path d="M8 2v11M3.5 8.5 8 13l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+  </span>
+</a>

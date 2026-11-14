@@ -1,0 +1,96 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import { dict, site, type Lang } from '../data/site';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import '../styles/tokens.css';
+import '../styles/base.css';
+import '../styles/site.css';
+
+interface Props {
+  lang: Lang;
+  page: 'home' | 'how' | 'guide' | 'notFound';
+  title: string;
+  description: string;
+  alternate?: string; // the same page in the other language
+  noindex?: boolean;
+}
+const { lang, page, title, description, alternate, noindex } = Astro.props;
+const t = dict[lang];
+const canonical = new URL(Astro.url.pathname, Astro.site ?? site.url).href;
+const ogImage = new URL(lang === 'ru' ? '/og-ru.png' : '/og.png', Astro.site ?? site.url).href;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: site.name,
+  operatingSystem: 'Windows 10, Windows 11',
+  applicationCategory: 'UtilitiesApplication',
+  softwareVersion: site.version,
+  fileSize: '550KB',
+  downloadUrl: site.x64,
+  license: 'https://opensource.org/licenses/MIT',
+  isAccessibleForFree: true,
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  url: site.url,
+  codeRepository: site.repo,
+  description: dict.en.meta.home.description,
+  inLanguage: ['en', 'ru'],
+};
+---
+<!doctype html>
+<html lang={lang} transition:animate="none" data-page={page}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {alternate && <link rel="alternate" hreflang={t.other.lang} href={new URL(alternate, Astro.site ?? site.url).href} />}
+    {alternate && <link rel="alternate" hreflang={lang} href={canonical} />}
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta name="theme-color" content="#1b1b1b" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content={lang === 'ru' ? 'ru_RU' : 'en_US'} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <link rel="preload" href="/fonts/flex-latin.woff2" as="font" type="font/woff2" crossorigin />
+    {lang === 'ru' && <link rel="preload" href="/fonts/flex-cyrillic.woff2" as="font" type="font/woff2" crossorigin />}
+    {page === 'home' && <link rel="preload" href={lang === 'ru' ? '/fonts/flex-names-cyrillic.woff2' : '/fonts/flex-names-latin.woff2'} as="font" type="font/woff2" crossorigin />}
+    <slot name="head" />
+    <script is:inline>
+      document.documentElement.classList.add('js');
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('motion');
+    </script>
+    <ClientRouter fallback="swap" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{t.skip}</a>
+    <div id="curtain" transition:persist="curtain" aria-hidden="true">
+      <div class="curtain__panel">
+        <div class="curtain__bar"><span class="curtain__dot"></span><span class="curtain__label" data-curtain-label></span></div>
+        <p class="curtain__title" data-curtain-title></p>
+      </div>
+    </div>
+    <Header lang={lang} page={page} alternate={alternate} />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <Footer lang={lang} />
+    <script>
+      import { start } from '../engine/astro';
+      import { setupMotion } from '../motion/setup';
+      start(setupMotion);
+    </script>
+  </body>
+</html>

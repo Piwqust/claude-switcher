@@ -1,0 +1,14 @@
+---
+// Keycaps. data-key lets the page light a cap when the visitor presses the real key.
+interface Props { keys: string[]; size?: 'sm' | 'lg' }
+const { keys, size = 'sm' } = Astro.props;
+const id = (k: string) => (k.includes('…') ? 'digit' : k.toLowerCase());
+---
+<span class:list={['keys', `keys--${size}`]}>
+  {keys.map((k, i) => (
+    <>
+      {i > 0 && <span class="keys__plus" aria-hidden="true">+</span>}
+      <kbd class="key" data-key={id(k)}>{k}</kbd>
+    </>
+  ))}
+</span>

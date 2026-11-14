@@ -1,0 +1,26 @@
+---
+import { dict, href, site, type Lang } from '../data/site';
+import Mark from './Mark.astro';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = dict[lang];
+---
+<footer class="ftr">
+  <div class="ftr__top">
+    <a class="ftr__brand" href={href(lang, 'home')}><Mark size={28} /><span>Claude Profile Switcher</span></a>
+    <ul class="ftr__links">
+      <li><a class="util" href={href(lang, 'how')}>{t.nav.how}</a></li>
+      <li><a class="util" href={href(lang, 'guide')}>{t.nav.guide}</a></li>
+      <li><a class="util" href={site.repo}>{t.footer.source}</a></li>
+      <li><a class="util" href={site.releases}>{t.footer.releases}</a></li>
+      <li><a class="util" href={site.license}>{t.footer.license}</a></li>
+    </ul>
+  </div>
+  <div class="ftr__bottom">
+    <p class="ftr__legal">{t.footer.unofficial} <a class="util util--inline" href={site.terms}>{t.footer.terms}</a>.</p>
+    <p class="ftr__meta">
+      <span>{t.footer.version} {site.version}</span>
+      <span>{t.footer.colophon}</span>
+    </p>
+  </div>
+</footer>

@@ -1,0 +1,24 @@
+---
+import Base from '../layouts/Base.astro';
+import { dict, href, pageColor } from '../data/site';
+const t = dict.en.notFound;
+const r = dict.ru.notFound;
+---
+<Base lang="en" page="notFound" title={t.title} description={t.p} noindex>
+  <div class="nf">
+    <a class="nf__pane" href={href('en', 'home')} data-reveal="beside" data-intro>
+      <span class="sr-only">{t.back}</span>
+      <span class="nf__plus" aria-hidden="true">+</span>
+      <code class="nf__code" aria-hidden="true">{t.code}</code>
+    </a>
+    <div class="nf__text">
+      <h1 class="nf__title" data-split="words" data-intro data-delay="0.3">{t.h1}</h1>
+      <p>{t.p}</p>
+      <p lang="ru" class="nf__ru">{r.h1} {r.p}</p>
+      <p class="nf__actions">
+        <a class="next" style={`--to:${pageColor.home}`} href={href('en', 'home')}><span class="next__label">{t.back}</span><span class="next__arrow" aria-hidden="true">→</span></a>
+        <a class="next next--small" style={`--to:${pageColor.home}`} href={href('ru', 'home')} lang="ru"><span class="next__label">{r.back}</span><span class="next__arrow" aria-hidden="true">→</span></a>
+      </p>
+    </div>
+  </div>
+</Base>

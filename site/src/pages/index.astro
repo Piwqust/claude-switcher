@@ -1,0 +1,9 @@
+---
+import Base from '../layouts/Base.astro';
+import HomePage from '../components/HomePage.astro';
+import { dict } from '../data/site';
+const t = dict.en;
+---
+<Base lang="en" page="home" title={t.meta.home.title} description={t.meta.home.description} alternate="/ru/">
+  <HomePage lang="en" />
+</Base>

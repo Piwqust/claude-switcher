@@ -1,0 +1,44 @@
+---
+import { dict, href, site, type Lang } from '../data/site';
+import Mark from './Mark.astro';
+interface Props { lang: Lang; page: string; alternate?: string }
+const { lang, page, alternate } = Astro.props;
+const t = dict[lang];
+const links = [
+  { key: 'how', label: t.nav.how, href: href(lang, 'how') },
+  { key: 'guide', label: t.nav.guide, href: href(lang, 'guide') },
+] as const;
+const otherHref = alternate ?? href(t.other.lang, 'home');
+---
+<header class="hdr" data-hdr>
+  <a class="hdr__brand" href={href(lang, 'home')} aria-current={page === 'home' ? 'page' : undefined}>
+    <Mark />
+    <span class="hdr__name"><span class="hdr__claude">Claude</span> Profile Switcher</span>
+  </a>
+  <button class="hdr__menu" type="button" aria-expanded="false" aria-controls="site-nav" data-menu-btn>
+    <span class="hdr__menu-open">{lang === 'ru' ? 'Меню' : 'Menu'}</span><span class="hdr__menu-close">{lang === 'ru' ? 'Закрыть' : 'Close'}</span>
+  </button>
+  <nav class="hdr__nav" id="site-nav" aria-label={lang === 'ru' ? 'Основная навигация' : 'Main'} data-menu>
+    <ul class="hdr__links">
+      {links.map((l) => (
+        <li>
+          <a class="nav-link" href={l.href} aria-current={page === l.key ? 'page' : undefined}>
+            <span class="nav-link__dot" aria-hidden="true"></span><span class="nav-link__text">{l.label}</span>
+          </a>
+        </li>
+      ))}
+      <li>
+        <a class="nav-link nav-link--lang" href={otherHref} hreflang={t.other.lang} lang={t.other.lang}>
+          <span class="nav-link__dot" aria-hidden="true"></span>
+          <span class="nav-link__text"><span class="hdr__lang-short" aria-hidden="true">{t.other.short}</span><span class="hdr__lang-long" aria-hidden="true">{t.other.label}</span></span>
+          <span class="sr-only">{t.other.label}</span>
+        </a>
+      </li>
+    </ul>
+    <a class="btn btn--sm hdr__dl" href={site.x64} data-fill data-astro-reload>
+      <span class="btn__fill" aria-hidden="true"></span>
+      <span class="btn__label">{t.nav.download}</span>
+      <span class="btn__arrow" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M8 2v11M3.5 8.5 8 13l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+    </a>
+  </nav>
+</header>

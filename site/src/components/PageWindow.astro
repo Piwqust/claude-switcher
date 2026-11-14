@@ -1,0 +1,15 @@
+---
+// An inner page's hero: the page is one more account window, opened beside the home page.
+interface Props { color: string; num: string; name: string; status: string; dashed?: boolean }
+const { color, num, name, status, dashed = false } = Astro.props;
+---
+<section class:list={['pagewin', { 'pagewin--dashed': dashed }]} style={`--pane:${color}`}>
+  <div class="pagewin__bar">
+    <span class="pane__key">{num}</span>
+    <span class="pagewin__name">{name}</span>
+    <span class="pane__status"><span class="pane__dot is-on"></span>{status}</span>
+  </div>
+  <div class="pagewin__body">
+    <slot />
+  </div>
+</section>

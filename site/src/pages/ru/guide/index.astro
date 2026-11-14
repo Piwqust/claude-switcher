@@ -1,0 +1,9 @@
+---
+import Base from '../../../layouts/Base.astro';
+import GuidePage from '../../../components/GuidePage.astro';
+import { dict } from '../../../data/site';
+const t = dict.ru;
+---
+<Base lang="ru" page="guide" title={t.meta.guide.title} description={t.meta.guide.description} alternate="/guide/">
+  <GuidePage lang="ru" />
+</Base>

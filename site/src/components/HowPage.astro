@@ -1,0 +1,98 @@
+---
+import { dict, href, pageColor, paneColors, site, type Lang } from '../data/site';
+import PageWindow from './PageWindow.astro';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = dict[lang];
+const h = t.how;
+---
+<PageWindow color={pageColor.how} num="2" name={h.eyebrow} status={t.hero.open}>
+  <h1 class="pagewin__title" data-split="words" data-intro data-delay="0.3">{h.h1}</h1>
+  <div class="tree" aria-label={lang === 'ru' ? 'Папки профилей' : 'Profile folders'}>
+    <p class="tree__root">%LOCALAPPDATA%\ClaudeProfiles\</p>
+    <ul>
+      <li><span class="tree__ico"></span>Account 2<span class="tree__note">cookies, Local Storage, config.json</span></li>
+      <li><span class="tree__ico"></span>Account 3</li>
+      <li><span class="tree__ico tree__ico--file"></span>settings.json</li>
+      <li><span class="tree__ico"></span>.switcher</li>
+    </ul>
+  </div>
+  <p class="pagewin__lede">{h.lede.split('--user-data-dir').map((part, i) => (<>{i > 0 && <code class="nowrap">--user-data-dir</code>}{part}</>))}</p>
+</PageWindow>
+
+<div class="doc">
+  <section class="doc__section" aria-labelledby="steps">
+    <h2 class="h2" data-n="2.1" id="steps" data-split="lines">{h.stepsH}</h2>
+    <ol class="steps">
+      {h.steps.map((s, i) => (
+        <li class="steps__item" data-reveal="beside" data-delay={String(i * 0.05)}>
+          <span class="step__n">{i + 1}</span>
+          <h3>{s.h}</h3>
+          <p>{s.p}</p>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="doc__section split" aria-labelledby="own">
+    <div class="split__own">
+      <h2 class="h3" id="own">{h.ownH}</h2>
+      <ul class="own">
+        {h.own.map((o, i) => <li style={`--pane:${paneColors[i % paneColors.length]}`}><span class="pane__dot is-on" aria-hidden="true"></span>{o}</li>)}
+      </ul>
+    </div>
+    <div class="split__shared">
+      <h2 class="h3" id="shared">{h.sharedH}</h2>
+      <dl class="shared">
+        {h.shared.map((s) => (
+          <div><dt>{s.h}</dt><dd>{s.p}</dd></div>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <section class="doc__section" aria-labelledby="details">
+    <h2 class="h2" data-n="2.2" id="details" data-split="lines">{h.detailsH}</h2>
+    <dl class="pairs">
+      {h.details.map((d) => (<div><dt>{d.h}</dt><dd>{d.p}</dd></div>))}
+    </dl>
+  </section>
+
+  <section class="doc__section" aria-labelledby="usage">
+    <h2 class="h2" data-n="2.3" id="usage" data-split="lines">{h.usageH}</h2>
+    <p class="doc__lede">{h.usageLede}</p>
+    <div class="files">
+      {h.usage.map((u) => (
+        <div class="file" data-reveal="beside"><code>{u.src}</code><p>{u.what}</p></div>
+      ))}
+    </div>
+    <p class="doc__rule">{h.usageRule}</p>
+  </section>
+
+  <section class="doc__section" aria-labelledby="security">
+    <h2 class="h2" data-n="2.4" id="security" data-split="lines">{h.securityH}</h2>
+    <dl class="pairs">
+      {h.security.map((d) => (<div><dt>{d.h}</dt><dd>{d.p}</dd></div>))}
+    </dl>
+    <p class="doc__small"><a class="link link--pad" href={site.security}>{h.vulnerability}</a></p>
+  </section>
+
+  <section class="doc__section" aria-labelledby="compare">
+    <h2 class="h2" data-n="2.5" id="compare" data-split="lines">{h.compareH}</h2>
+    <div class="table-wrap" tabindex="0" role="region" aria-labelledby="compare">
+      <table class="table table--compare">
+        <thead><tr>{h.compareCols.map((c, i) => (i === 0 ? <td></td> : <th scope="col">{c}</th>))}</tr></thead>
+        <tbody>
+          {h.compare.map((r) => (<tr><th scope="row">{r[0]}</th><td>{r[1]}</td><td>{r[2]}</td></tr>))}
+        </tbody>
+      </table>
+    </div>
+    <p class="doc__small">{h.compareNote}</p>
+    <h3 class="h3 doc__sub">{h.whyH}</h3>
+    <dl class="pairs pairs--three">
+      {h.why.map((d) => (<div><dt>{d.h}</dt><dd>{d.p}</dd></div>))}
+    </dl>
+  </section>
+
+  <p class="doc__next"><a class="next" style={`--to:${pageColor.guide}`} href={href(lang, 'guide')}><span class="next__label">{h.next}</span><span class="next__arrow" aria-hidden="true">→</span></a></p>
+</div>

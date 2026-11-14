@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://claude-switcher.angleford.co/sitemap-index.xml
