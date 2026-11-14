@@ -424,16 +424,16 @@ namespace App {
         bool code = id == codeProfile;
         std::thread([p, code] {
             auto r = new DeleteResult{ p.id };
-            // A Code default that no longer exists would leave Code on that account's token.
-            if (code) {
-                try { CodeAuth::Restore(); }
-                catch (const std::wstring& e) { Core::Log(L"Delete " + p.id + L": Claude Code login: " + e); }
-                catch (...) {}
-            }
             try { Core::Delete(p); }
             catch (const std::wstring& e) { r->error = e; }
             catch (const std::exception& e) { r->error = Util::Format(L"%S", e.what()); }
             catch (...) { r->error = Tr(L"Something went wrong", L"Что-то пошло не так"); }
+            // A Code default that no longer exists would leave Code on that account's token.
+            if (code && r->error.empty()) {
+                try { CodeAuth::Restore(); }
+                catch (const std::wstring& e) { Core::Log(L"Delete " + p.id + L": Claude Code login: " + e); }
+                catch (...) {}
+            }
             if (!PostMessageW(tray, WM_DELETED, 0, (LPARAM)r)) delete r;
         }).detach();
     }
