@@ -55,7 +55,17 @@ namespace {
             Translate(0, (fromBelow ? 10 : -10) * (1 - t));
             Stroke(Client(), T.menuStroke, 8);
 
-            Text(AppTitle(), { 16, 10, 200, 32 }, Font(14, DWRITE_FONT_WEIGHT_SEMI_BOLD), T.text);
+            // A new version shows as a button next to the title, so the update is one click from the tray.
+            float titleW = 200;
+            auto up = Update::State();
+            if (up == Update::Phase::Ready || up == Update::Phase::Downloading || up == Update::Phase::Installing) {
+                bool busy = up != Update::Phase::Ready;
+                auto label = busy ? std::wstring(Tr(L"Updating…", L"Обновляю…")) : std::wstring(Tr(L"Update", L"Обновить"));
+                float bw = Measure(label, Font(14, DWRITE_FONT_WEIGHT_SEMI_BOLD)).width + 28, bx = W - 88 - bw;
+                Button(Id("fo-update"), { bx, 12, bw, 28 }, label, true, [] { Update::Install(); }, false, !busy);
+                titleW = bx - 24;
+            }
+            Text(AppTitle(), { 16, 10, titleW, 32 }, Font(14, DWRITE_FONT_WEIGHT_SEMI_BOLD), T.text);
             IconButton(Id("fo-open"), { W - 80, 10, 32, 32 }, Glyphs::Open, [this] { Hide(); App::ShowPicker(); });
             IconButton(Id("fo-settings"), { W - 44, 10, 32, 32 }, Glyphs::Settings, [this] { Hide(); App::ShowSettings(); });
 

@@ -38,7 +38,7 @@ Claude Desktop holds one sign-in at a time, so switching to your work account me
 2. Run it. It installs itself, without admin rights, and opens the picker.
 3. Click **Add** and sign in with your other account in the new Claude window. That's it: both stay signed in.
 
-You need Windows 10 or 11 and [Claude Desktop](https://claude.ai/download). The exe is not code-signed, so the first time Windows may say "Windows protected your PC": click **More info → Run anyway**. To update, run the new version; accounts and settings are kept.
+You need Windows 10 or 11 and [Claude Desktop](https://claude.ai/download). The exe is not code-signed, so the first time Windows may say "Windows protected your PC": click **More info → Run anyway**. It updates itself from then on: click **Update** when it offers one.
 
 ## Using it
 

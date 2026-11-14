@@ -76,10 +76,14 @@ Keep text short and plain: buttons name the action ("Open now"), labels name the
 ## Releasing (maintainers)
 
 1. Move the "Unreleased" entries into a new `## [X.Y.Z] — YYYY-MM-DD` section in CHANGELOG.md.
-2. Bump the version in `src/app.rc`, `src/app.manifest` and the About text in `src/settings.cpp`.
-3. Create and push a tag:
+2. Bump the version in `src/version.h` and `src/app.manifest`.
+3. Draw the release's picture, a headline and a line about its main change, and commit `docs/releases/X.Y.Z.png`:
+   ```powershell
+   .\tools\release-art\make.ps1 -Version X.Y.Z -Title "Updates itself" -Subtitle "One click, a few seconds"
+   ```
+4. Create and push a tag:
    ```bash
    git tag vX.Y.Z
    git push origin vX.Y.Z
    ```
-   The `release.yml` workflow builds x64 and ARM64, computes SHA-256 checksums and publishes the release with its notes from CHANGELOG.md.
+   The `release.yml` workflow builds x64 and ARM64, computes SHA-256 checksums and publishes the release: the picture, the notes from CHANGELOG.md and the download buttons. Running switchers find it within 6 hours and offer **Update**; the update checks the exe against `SHA256SUMS.txt`, so that file must stay among the release files.

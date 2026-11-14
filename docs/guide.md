@@ -41,7 +41,7 @@ Everything Claude Profile Switcher can do, in the order you are likely to need i
 
 **You need** Windows 10 or 11 and [Claude Desktop](https://claude.ai/download), from the Microsoft Store or the installer. The switcher finds it on its own.
 
-**Updating:** download the new version and run it. It closes the old one, takes its place and keeps every account, name and setting. Upgrading from the PowerShell switcher (v2) works the same way.
+**Updating:** when a new version is out, click **Update** in the tray flyout, the tray menu or Settings → About. In a few seconds the new version is running; accounts, names, settings and open Claude windows stay as they were. You can also download the new version and run it, the way to upgrade from 1.0.x or from the PowerShell switcher (v2).
 
 ## The picker
 
@@ -99,6 +99,7 @@ Closing the window leaves the switcher in the tray, where it uses about 20 MB of
 
 - **Left-click** the icon for the account list with usage. Open accounts have ⟳ there to restart them and ✕ to close them.
 - **Double-click** it to open the main window.
+- When a new version is out, an **Update** button appears next to the list's title and in the right-click menu.
 - **Right-click** it for the standard Windows menu: accounts, Restart Claude, Close Claude, Add account…, Settings, Quit switcher.
 
 **Restart Claude** closes an open account's Claude completely and opens it again, for when it hangs or has to pick up new MCP servers or settings. Claude's own Quit only hides it to the tray, so the switcher ends the whole process, Claude Code chats running in it included; unsent text in that window is lost. With several accounts open, **All open** restarts them together.
@@ -125,7 +126,7 @@ If you would rather it quit with the window, turn off **Stay in the tray when cl
   <img src="images/settings.png" alt="Settings in the dark and light themes" width="100%">
 </p>
 
-Start with Windows, asking at sign-in, which accounts open on their own, the countdown, shortcuts, hiding the picker after opening an account, the tray, separate taskbar buttons and the interface language.
+Start with Windows, asking at sign-in, which accounts open on their own, the countdown, shortcuts, hiding the picker after opening an account, the tray, separate taskbar buttons, the interface language and updates.
 
 ## Terminal Claude Code account
 

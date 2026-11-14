@@ -75,33 +75,21 @@ jobs:
           $log = Get-Content ../CHANGELOG.md -Raw -Encoding utf8
           $m = [regex]::Match($log, "(?ms)^## \[$([regex]::Escape($version))\][^\n]*\n(.*?)(?=^## \[|^\[[^\]]+\]: |\z)")
           $changes = if ($m.Success) { $m.Groups[1].Value.Trim() } else { "See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/$tag/CHANGELOG.md)." }
-          $kb = { param($f) [math]::Round((Get-Item $f).Length / 1KB) }
           $base = "https://github.com/${{ github.repository }}/releases/download/$tag"
+          $raw = "https://raw.githubusercontent.com/${{ github.repository }}/$tag"
+          # Each release has its own picture, drawn by tools/release-art/make.ps1; older tags fall back to the hero.
+          $art = if (Test-Path "../docs/releases/$version.png") { "$raw/docs/releases/$version.png" } else { "$raw/docs/images/hero.png" }
 
           @"
-          <p align="center"><img src="https://raw.githubusercontent.com/${{ github.repository }}/$tag/docs/images/hero.png" alt="Claude Profile Switcher $version" width="100%"></p>
-
-          ## Download
-
-          | Processor | File | Size |
-          | --- | --- | --- |
-          | **Intel or AMD** (almost every PC) | [ClaudeProfileSwitcher-x64.exe]($base/ClaudeProfileSwitcher-x64.exe) | $(& $kb ClaudeProfileSwitcher-x64.exe) KB |
-          | **ARM** (Snapdragon, Surface Pro X) | [ClaudeProfileSwitcher-arm64.exe]($base/ClaudeProfileSwitcher-arm64.exe) | $(& $kb ClaudeProfileSwitcher-arm64.exe) KB |
-          | Both builds and the docs | [ClaudeProfileSwitcher-$version-windows.zip]($base/ClaudeProfileSwitcher-$version-windows.zip) | $(& $kb "ClaudeProfileSwitcher-$version-windows.zip") KB |
-
-          Download the exe and run it: it installs itself, no admin rights needed. If Windows says "Windows protected your PC", click **More info → Run anyway**: the file is not code-signed. You need [Claude Desktop](https://claude.ai/download) installed. The interface is in English, or in Russian when Windows is.
-
-          ## What's new
+          <p align="center"><img src="$art" alt="Claude Profile Switcher $version" width="100%"></p>
 
           $changes
 
-          ## SHA-256 checksums
+          <p align="center">
+            <a href="$base/ClaudeProfileSwitcher-x64.exe"><img src="$raw/docs/images/download-x64.png" alt="Download for Windows x64" height="56"></a>&nbsp;&nbsp;<a href="$base/ClaudeProfileSwitcher-arm64.exe"><img src="$raw/docs/images/download-arm64.png" alt="Download for Windows ARM64" height="56"></a>
+          </p>
 
-          ``````
-          $($sums -join "`n")
-          ``````
-
-          <sub>Built by GitHub Actions from commit ${{ github.sha }}. · [README на русском](https://github.com/${{ github.repository }}/blob/$tag/README.ru.md)</sub>
+          <p align="center"><sub>Run the exe: it installs itself or updates your copy, accounts and settings stay. It isn't code-signed, so Windows may ask: <b>More info → Run anyway</b>.</sub></p>
           "@ -replace '(?m)^          ', '' | Set-Content release-notes.md -Encoding utf8
 
           "version=$version" >> $env:GITHUB_OUTPUT

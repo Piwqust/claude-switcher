@@ -8,6 +8,7 @@
     ClaudeProfileSwitcher.exe --add-account   add an account (in the running switcher if there is one)
     ClaudeProfileSwitcher.exe --open-link <url>   a claude:// link, to the account used last (Windows runs this)
     ClaudeProfileSwitcher.exe --install       install or refresh the install, then open the picker
+                              (--tray, --settings and --updated pass on to the installed copy)
     ClaudeProfileSwitcher.exe --claude-path <exe>   point at Claude.exe if detection fails (remembered)
 
     CPS_DEMO=<folder>   environment variable: a separate switcher over stand-in accounts (see core.cpp)
@@ -108,7 +109,10 @@ static int Run() {
     bool installed = Paths::Demo || Paths::Same(Paths::Self, Paths::InstalledExe);
     if (flag(L"--install") || (!installed && argc <= 1)) {
         Core::Install();
-        ShellExecuteW(nullptr, L"open", Paths::InstalledExe.c_str(), nullptr, Paths::Home.c_str(), SW_SHOWNORMAL);
+        std::wstring pass;
+        for (auto f : { L"--tray", L"--settings", L"--updated" }) if (flag(f)) pass += (pass.empty() ? L"" : L" ") + std::wstring(f);
+        AllowSetForegroundWindow(ASFW_ANY);
+        ShellExecuteW(nullptr, L"open", Paths::InstalledExe.c_str(), pass.empty() ? nullptr : pass.c_str(), Paths::Home.c_str(), SW_SHOWNORMAL);
         return 0;
     }
 
@@ -125,6 +129,8 @@ static int Run() {
     }
 
     App::Start(mode);
+    if (flag(L"--settings")) App::ShowSettings();
+    if (flag(L"--updated")) App::Notify(Util::Format(Tr(L"Switcher updated to %s", L"Переключатель обновлён до %s"), Update::Version()), Tr(L"Everything is where you left it", L"Всё на своих местах"));
     MSG m;
     while (GetMessageW(&m, nullptr, 0, 0)) { TranslateMessage(&m); DispatchMessageW(&m); }
     ReleaseMutex(mutex); CloseHandle(mutex);

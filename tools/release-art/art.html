@@ -1,0 +1,91 @@
+<!doctype html>
+<!-- The picture at the top of a GitHub release, dressed like the website (Fluent dark, Segoe UI Variable,
+     the switcher's terracotta, blue and green). make.ps1 opens it with ?v=&t=&s=&b= and screenshots it. -->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg: #141414; --mica: #202020; --layer: #2b2b2b;
+    --stroke: rgba(255,255,255,.08); --stroke-2: rgba(255,255,255,.14);
+    --text: #fff; --text-2: rgba(255,255,255,.79); --text-3: rgba(255,255,255,.6);
+    --accent: #e08566; --accent-text: #f0a88e; --on-accent: #1a0f0a;
+    --work: #3d77a6; --personal: #3f8a58; --open: #6ccb6c;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1600px; height: 800px; overflow: hidden; }
+  body {
+    background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased;
+    font-family: "Segoe UI Variable Text", "Segoe UI", sans-serif;
+    display: grid; grid-template-columns: 1fr 560px; align-items: center; gap: 72px; padding: 0 110px 0 120px;
+  }
+  .glow { position: fixed; inset: 0; pointer-events: none; }
+  .brand { position: fixed; left: 120px; top: 64px; display: flex; align-items: center; gap: 14px; font-weight: 600; font-size: 22px; }
+  .brand img { width: 34px; height: 34px; }
+  .eyebrow { color: var(--accent-text); font-weight: 600; font-size: 24px; letter-spacing: .01em; }
+  h1 { font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif; font-weight: 600; font-size: 112px; line-height: 1; letter-spacing: -0.02em; margin-top: 18px; }
+  p { color: var(--text-2); font-size: 28px; line-height: 1.45; margin-top: 28px; max-width: 24em; }
+
+  /* The tray flyout, as the app draws it. */
+  .win {
+    position: relative; background: var(--mica); border: 1px solid var(--stroke-2); border-radius: 8px;
+    box-shadow: 0 32px 64px rgba(0,0,0,.37), 0 2px 21px rgba(0,0,0,.37); padding: 12px 8px 10px;
+  }
+  .head { display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 12px 0 16px; }
+  .head b { font-weight: 600; font-size: 20px; margin-right: auto; }
+  .btn { height: 36px; padding: 0 18px; border-radius: 6px; background: var(--accent); color: var(--on-accent); font-weight: 600; font-size: 17px; display: flex; align-items: center; border: 1px solid rgba(255,255,255,.08); border-bottom-color: rgba(0,0,0,.3); box-shadow: 0 0 0 6px rgba(224,133,102,.16); }
+  .ico { width: 36px; height: 36px; border-radius: 6px; display: grid; place-items: center; color: var(--text-2); }
+  .ico svg { width: 18px; height: 18px; }
+  .row { display: flex; align-items: center; gap: 16px; height: 76px; padding: 0 14px; border-radius: 6px; }
+  .row.hot { background: rgba(255,255,255,.06); }
+  .av { position: relative; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-weight: 600; font-size: 17px; color: #fff; flex: none; }
+  .av i { position: absolute; right: -2px; bottom: -2px; width: 15px; height: 15px; border-radius: 50%; background: var(--open); border: 3px solid var(--mica); }
+  .nm { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+  .nm b { font-weight: 600; font-size: 20px; }
+  .nm span { font-size: 16px; color: var(--text-3); }
+  .nm span.open { color: var(--open); }
+  .k { width: 28px; height: 28px; border-radius: 4px; background: rgba(255,255,255,.06); border: 1px solid var(--stroke); display: grid; place-items: center; font-size: 15px; color: var(--text-2); }
+  hr { border: 0; border-top: 1px solid var(--stroke); margin: 8px 0; }
+</style>
+</head>
+<body>
+  <div class="glow" id="glow"></div>
+  <div class="brand"><img src="../../docs/images/logo.png" alt="">Claude Profile Switcher</div>
+  <div>
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1 id="t"></h1>
+    <p id="s"></p>
+  </div>
+  <div class="win">
+    <div class="head">
+      <b>Claude Accounts</b>
+      <span class="btn" id="badge"></span>
+      <span class="ico"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M9 2h5v5M14 2 8 8M12 9.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3.5"/></svg></span>
+      <span class="ico"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor"><circle cx="8" cy="8" r="5.2" stroke-width="2.4" stroke-dasharray="2.04 2.04"/><circle cx="8" cy="8" r="4" stroke-width="1.3"/><circle cx="8" cy="8" r="1.6" stroke-width="1.3"/></svg></span>
+    </div>
+    <div class="row hot"><span class="av" style="background:var(--accent)">M<i></i></span><span class="nm"><b>Main</b><span class="open">Open</span></span><span class="k">1</span></div>
+    <div class="row"><span class="av" style="background:var(--work)">W<i></i></span><span class="nm"><b>Work</b><span class="open">Open</span></span><span class="k">2</span></div>
+    <div class="row"><span class="av" style="background:var(--personal)">P</span><span class="nm"><b>Personal</b><span>Today, 09:41</span></span><span class="k">3</span></div>
+    <hr>
+    <div class="row" style="height:58px"><span style="width:46px;text-align:center;color:var(--text-2);font-size:24px;font-weight:300">+</span><span class="nm"><b style="font-weight:400;font-size:18px">Add account</b></span></div>
+  </div>
+<script>
+  const q = new URLSearchParams(location.search);
+  const v = q.get('v') || '0.0.0';
+  // The site's three glows; which one leads turns with the version, so no two releases in a row look alike.
+  const tints = ['224,133,102', '61,119,166', '63,138,88'];
+  const n = v.split('.').reduce((a, x) => a + (parseInt(x, 10) || 0), 0) % 3;
+  const t = k => tints[(n + k) % 3];
+  document.getElementById('glow').style.background = [
+    `radial-gradient(55% 60% at 30% 0%, rgba(${t(0)},.20), transparent 70%)`,
+    `radial-gradient(35% 50% at 0% 85%, rgba(${t(1)},.14), transparent 70%)`,
+    `radial-gradient(40% 55% at 82% 50%, rgba(${t(2)},.14), transparent 70%)`
+  ].join(',');
+  document.getElementById('eyebrow').textContent = 'Version ' + v;
+  document.getElementById('t').textContent = q.get('t') || v;
+  document.getElementById('s').textContent = q.get('s') || '';
+  const badge = document.getElementById('badge');
+  if (q.get('b')) badge.textContent = q.get('b'); else badge.remove();
+</script>
+</body>
+</html>

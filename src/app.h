@@ -43,7 +43,9 @@ namespace App {
     void Delete(std::wstring id, HWND owner);
     void ToggleAutoOpen(const std::wstring& id);
     void ShowMenu(std::wstring id, POINT screen, HWND owner);
-    void Notify(const std::wstring& title, const std::wstring& text, bool error = false);
+    // onClick runs when the balloon itself is clicked.
+    void Notify(const std::wstring& title, const std::wstring& text, bool error = false, std::function<void()> onClick = nullptr);
+    void OnUi(std::function<void()> f);   // run on the UI thread, from any thread
     void CopyChats(HWND owner, const std::vector<CodeSession>& picked, const std::wstring& targetId);
     void UseForCode(const std::wstring& id);   // empty restores the existing CLI login
     std::wstring CodeProfile();
@@ -85,6 +87,19 @@ namespace Dialogs {
     void Info(HWND owner, const std::wstring& title, const std::wstring& text);
     void Transfer(HWND owner, const std::wstring& sourceId);
     void RestyleAll();
+}
+
+namespace Update {
+    enum class Phase { Idle, Checking, Current, Ready, Downloading, Installing, Failed };
+    const wchar_t* Version();          // this build's, e.g. L"1.1.0"
+    Phase State();
+    std::wstring Latest();             // the newer version, once one is found
+    std::wstring Problem();
+    ULONGLONG CheckedAt();             // FILETIME ticks of the last successful check, 0 = never
+    bool Auto(); void SetAuto(bool on);
+    void Check(bool manual);
+    void Install();
+    void Cleanup();
 }
 
 namespace Hotkeys {

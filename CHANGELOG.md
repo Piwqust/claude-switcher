@@ -5,6 +5,14 @@ Each version's section becomes the description of its GitHub release.
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-11-14
+
+### New
+
+- **The switcher updates itself.** When a new version is out, an **Update** button appears in the tray flyout, the tray menu and Settings → About. One click: the new exe is downloaded, checked against the release's SHA-256 checksum and swapped in, in a few seconds. Claude's windows stay open.
+- It looks for a new release at start and every 6 hours, asking GitHub only for the latest version number. Turn this off in Settings → About; **Check now** still works.
+- Every release now opens with its own picture and download buttons.
+
 ## [1.0.4] — 2026-11-14
 
 ### New
@@ -73,7 +81,8 @@ The first release. Claude Profile Switcher is built on [Claude Code Desktop Swit
 - Start with Windows uses `HKCU\…\Run` instead of a shortcut in the Startup folder. The old shortcut is removed.
 - Messages appear as notifications and dialogs instead of a status line at the bottom of the window.
 
-[Unreleased]: https://github.com/Piwqust/claude-switcher/compare/v1.0.4...HEAD
+[Unreleased]: https://github.com/Piwqust/claude-switcher/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Piwqust/claude-switcher/compare/v1.0.4...v1.1.0
 [1.0.4]: https://github.com/Piwqust/claude-switcher/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/Piwqust/claude-switcher/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/Piwqust/claude-switcher/compare/v1.0.1...v1.0.2

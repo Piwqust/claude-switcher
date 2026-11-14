@@ -71,7 +71,7 @@ A figure is shown only if it is at most 15 minutes old and its window has not re
 
 ## Security and privacy
 
-- **Desktop switching needs no network or credential access.** There is no telemetry or update check.
+- **Desktop switching needs no network or credential access.** There is no telemetry. The only other request is the update check: the latest release's version from `api.github.com`, at start and every 6 hours, which Settings → About can turn off. An update is installed only when you click **Update** and its SHA-256 matches the release's `SHA256SUMS.txt`.
 - **The default Code account is optional.** **Use for Claude Code** reads the selected profile's saved access token using Windows secure storage, verifies the account over HTTPS at `api.anthropic.com/api/oauth/profile`, and writes `env.CLAUDE_CODE_OAUTH_TOKEN` in `%USERPROFILE%\.claude\settings.json`. Access to this file is restricted to your user and Windows SYSTEM. It now contains a credential: do not publish it.
 - **Desktop owns sign-in renewal.** While running, the switcher checks for a changed access token every 15 seconds. It never exports or uses the refresh token. If Desktop's cache expires, open that profile so Desktop can renew it. A revoked session still requires restoring the sign-in.
 - **The existing Code login is kept.** `.credentials.json`, account metadata and MCP logins are never rewritten. **Restore previous login** removes only the token setting the switcher added. Explicit project or organization credentials, environment variables and separate configuration directories may override the shared default.

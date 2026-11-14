@@ -37,7 +37,7 @@ if not exist "%OBJ%" mkdir "%OBJ%"
 for %%d in ("%OUT%") do if not exist "%%~dpd" mkdir "%%~dpd"
 rc /nologo /fo "%OBJ%\app.res" src\app.rc || exit /b 1
 cl /nologo /std:c++17 /O1 /GL /MT /EHsc /utf-8 /W3 /DNDEBUG /Fo"%OBJ%\\" ^
-   %ENTRY% src\app.cpp src\core.cpp src\shell.cpp src\gfx.cpp src\picker.cpp src\flyout.cpp src\settings.cpp src\dialogs.cpp "%OBJ%\app.res" ^
+   %ENTRY% src\app.cpp src\core.cpp src\shell.cpp src\gfx.cpp src\picker.cpp src\flyout.cpp src\settings.cpp src\dialogs.cpp src\update.cpp "%OBJ%\app.res" ^
    /link /OPT:REF /OPT:ICF /LTCG /SUBSYSTEM:%SUBSYSTEM% /MANIFEST:NO /out:"%OUT%" ^
    user32.lib gdi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib dwmapi.lib d2d1.lib dwrite.lib windowscodecs.lib ^
    advapi32.lib comctl32.lib comdlg32.lib propsys.lib shlwapi.lib bcrypt.lib crypt32.lib winhttp.lib || exit /b 1

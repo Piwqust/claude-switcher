@@ -17,8 +17,8 @@ namespace App {
     HWND tray = nullptr;
     HICON smallIcon = nullptr;
 
-    enum : UINT { WM_TRAY = WM_APP + 1, WM_REFRESHED, WM_LAUNCHED, WM_ADDED, WM_SIGNAL, WM_RENAME, WM_CODE_AUTH };
-    enum : UINT_PTR { TimerRefresh = 1, TimerSoon = 2, TimerHide = 3, TimerCode = 4 };
+    enum : UINT { WM_TRAY = WM_APP + 1, WM_REFRESHED, WM_LAUNCHED, WM_ADDED, WM_SIGNAL, WM_RENAME, WM_CODE_AUTH, WM_RUN };
+    enum : UINT_PTR { TimerRefresh = 1, TimerSoon = 2, TimerHide = 3, TimerCode = 4, TimerUpdate = 5 };
     const int HotkeyPicker = 1, HotkeyAccount = 10;   // 11..19 for Ctrl+Alt+1..9
 
     static UINT taskbarCreated;
@@ -137,8 +137,16 @@ namespace App {
         Shell_NotifyIconW(NIM_SETVERSION, &d);
     }
 
-    void Notify(const std::wstring& title, const std::wstring& text, bool error) {
+    static std::function<void()> balloonClick;
+
+    void OnUi(std::function<void()> f) {
+        auto p = new std::function<void()>(std::move(f));
+        if (!PostMessageW(tray, WM_RUN, 0, (LPARAM)p)) delete p;
+    }
+
+    void Notify(const std::wstring& title, const std::wstring& text, bool error, std::function<void()> onClick) {
         if (!iconAdded) return;
+        balloonClick = std::move(onClick);
         NOTIFYICONDATAW d{ sizeof d };
         d.hWnd = tray; d.uID = 1; d.uFlags = NIF_INFO;
         wcsncpy_s(d.szInfoTitle, title.c_str(), _TRUNCATE);
@@ -198,6 +206,9 @@ namespace App {
         }
         AppendMenuW(m, MF_POPUP, (UINT_PTR)code, Tr(L"Claude Code default account", L"Аккаунт Claude Code по умолчанию"));
         AppendMenuW(m, MF_SEPARATOR, 0, nullptr);
+        auto up = Update::State();
+        if (up == Update::Phase::Ready) AppendMenuW(m, MF_STRING, 8, Util::Format(Tr(L"Update to %s", L"Обновить до %s"), Update::Latest().c_str()).c_str());
+        else if (up == Update::Phase::Downloading || up == Update::Phase::Installing) AppendMenuW(m, MF_STRING | MF_GRAYED, 0, Tr(L"Updating…", L"Обновляется…"));
         AppendMenuW(m, MF_STRING, 1, Tr(L"Show accounts", L"Открыть окно выбора"));
         AppendMenuW(m, MF_STRING, 2, Tr(L"Add account…", L"Добавить аккаунт…"));
         AppendMenuW(m, MF_STRING, 3, Tr(L"Settings", L"Настройки"));
@@ -216,6 +227,7 @@ namespace App {
         else if (cmd == 5) Restart(open);
         else if (cmd == 6) Close(open);
         else if (cmd == 7) UseForCode(L"");
+        else if (cmd == 8) Update::Install();
         else if (cmd == 1) ShowPicker();
         else if (cmd == 2) AddAccount();
         else if (cmd == 3) ShowSettings();
@@ -499,6 +511,8 @@ namespace App {
             // The first click of the two has opened the flyout already; the double click swaps it for the window.
             case WM_LBUTTONDBLCLK: trayDoubleAt = GetTickCount64(); Flyout::Hide(); ShowPicker(); return 0;
             case WM_CONTEXTMENU: TrayMenu(); return 0;
+            case NIN_BALLOONUSERCLICK: if (auto f = std::move(balloonClick)) { balloonClick = nullptr; f(); } return 0;
+            case NIN_BALLOONTIMEOUT: case NIN_BALLOONHIDE: balloonClick = nullptr; return 0;
             }
             return 0;
         case WM_HOTKEY:
@@ -563,6 +577,7 @@ namespace App {
         case WM_RENAME:
             if (!pendingRename.empty()) { auto id = pendingRename; pendingRename.clear(); Picker::Rename(id); }
             return 0;
+        case WM_RUN: { auto f = (std::function<void()>*)l; (*f)(); delete f; return 0; }
         case WM_SIGNAL:
             if (w == 0) ShowPicker();
             else if (w == 1) Exit();
@@ -580,6 +595,9 @@ namespace App {
                 if (pending) SetTimer(h, TimerSoon, 3000, nullptr);
             } else if (w == TimerCode) {
                 UpdateCode(L"", false);
+            } else if (w == TimerUpdate) {
+                SetTimer(h, TimerUpdate, 6 * 60 * 60 * 1000, nullptr);
+                if (Update::Auto()) Update::Check(false);
             } else if (w == TimerHide) {
                 KillTimer(h, TimerHide);
                 if (Picker::Visible()) ClosePicker();
@@ -624,6 +642,9 @@ namespace App {
         try { codeProfile = CodeAuth::Selected(); } catch (const std::wstring& e) { codeProblem = e; }
         SetTimer(tray, TimerCode, 15000, nullptr);
         UpdateCode(L"", false);
+        // The first look for a new version waits until start-up has settled.
+        SetTimer(tray, TimerUpdate, 10000, nullptr);
+        Update::Cleanup();
 
         if (mode == StartMode::Window) ShowPicker();
         else if (mode == StartMode::Startup) {

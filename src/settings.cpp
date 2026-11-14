@@ -197,12 +197,42 @@ namespace {
             y += Section(y, Tr(L"About", L"О программе"));
             {
                 auto title = L"Claude " + (Core::App.version == L"unknown" ? L"" : Core::App.version + L" ") + L"· " + (Core::App.kind == L"Msix" ? L"Microsoft Store" : Tr(L"installer", L"установщик"));
-                float h = Card(y, title, Tr(L"Switcher 1.0.4. Profiles live in ", L"Переключатель 1.0.4. Профили лежат в ") + Paths::Root, 150);
+                float h = Card(y, title, Util::Format(Tr(L"Switcher %s. Profiles live in ", L"Переключатель %s. Профили лежат в "), Update::Version()) + Paths::Root, 150);
                 Button(Id("folder"), { w - Pad - 16 - 150, y + h / 2 - 16, 150, 32 }, Tr(L"Profiles folder", L"Папка профилей"), false, [] {
                     ShellExecuteW(nullptr, L"open", Paths::Root.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
                 });
-                y += h + 24;
+                y += h + 4;
             }
+            if (!Paths::Demo || Update::State() != Update::Phase::Idle) {
+                using P = Update::Phase;
+                auto st = Update::State();
+                std::wstring title, desc;
+                D2D1_COLOR_F descColor{};
+                switch (st) {
+                case P::Checking: title = Tr(L"Checking for updates…", L"Проверяю обновления…"); break;
+                case P::Ready:
+                    title = Util::Format(Tr(L"Version %s is out", L"Вышла версия %s"), Update::Latest().c_str());
+                    desc = Tr(L"Updating takes a few seconds. Claude windows stay open, the switcher comes back by itself", L"Обновление займёт пару секунд. Окна Claude останутся открытыми, переключатель перезапустится сам");
+                    break;
+                case P::Downloading: title = Util::Format(Tr(L"Downloading %s…", L"Скачиваю %s…"), Update::Latest().c_str()); break;
+                case P::Installing: title = Tr(L"Installing the update…", L"Устанавливаю обновление…"); break;
+                case P::Failed: title = Tr(L"Couldn't update", L"Не удалось обновить"); desc = Update::Problem(); descColor = T.danger; break;
+                case P::Current: title = Tr(L"The switcher is up to date", L"Установлена последняя версия"); desc = Tr(L"Checked ", L"Проверено: ") + Util::When(Update::CheckedAt()); break;
+                default: title = Tr(L"Updates", L"Обновления"); desc = Tr(L"New versions come from the project's GitHub releases", L"Новые версии берутся из релизов проекта на GitHub"); break;
+                }
+                float h = Card(y, title, desc, 150, 68, descColor);
+                RectF b{ w - Pad - 16 - 150, y + h / 2 - 16, 150, 32 };
+                bool busy = st == P::Checking || st == P::Downloading || st == P::Installing;
+                if (st == P::Ready || st == P::Downloading || st == P::Installing)
+                    Button(Id("update"), b, busy ? Tr(L"Updating…", L"Обновляю…") : Tr(L"Update", L"Обновить"), true, [] { Update::Install(); }, false, !busy);
+                else
+                    Button(Id("update"), b, Tr(L"Check now", L"Проверить"), false, [] { Update::Check(true); }, false, !busy);
+                y += h + 4;
+                y += ToggleRow(y, Tr(L"Check for updates automatically", L"Проверять обновления автоматически"),
+                               Tr(L"Looks for a new release at start and every 6 hours. Only the version is requested from GitHub, nothing about you or your accounts is sent", L"Ищет новый релиз при запуске и раз в 6 часов. У GitHub запрашивается только номер версии, ничего о вас и аккаунтах не отправляется"),
+                               Update::Auto(), [] { Update::SetAuto(!Update::Auto()); });
+            }
+            y += 20;
 
             float total = y + scrollY;
             scrollMax = std::max(0.f, total - Client().h);
